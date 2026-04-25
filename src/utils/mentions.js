@@ -1,5 +1,5 @@
 /**
- * Resolves a list of IDs (from config.supportPingIds) into mention strings,
+ * Resolves a list of IDs (from config.ticketSystem.supportPingIds) into mention strings,
  * auto-detecting whether each ID belongs to a role or a user.
  *
  * @param {import('discord.js').Guild} guild
@@ -51,7 +51,7 @@ async function buildSupportOverwrites(guild, ids, allow) {
 
 /**
  * Checks whether a guild member counts as a "support" user,
- * matching either by role ID or by user ID against config.supportPingIds.
+ * matching either by role ID or by user ID against config.ticketSystem.supportPingIds.
  *
  * @param {import('discord.js').GuildMember} member
  * @param {string[]} supportIds

@@ -14,6 +14,10 @@ const { buildSupportMentions, buildSupportOverwrites } = require('../utils/menti
 async function syncMissingTickets(client, guild) {
     console.log('[ticket-sync] Running ticket-sync...');
     const config = configService.get(guild.id);
+    if (!config.ticketSystem.enabled) {
+        console.log(`[ticket-sync] Ticket-System für Guild ${guild.id} deaktiviert. Überspringe Sync.`);
+        return { created: 0, relinked: 0, scanned: 0 };
+    }
 
     // Fetch all members so the cache is complete (requires GuildMembers intent)
     const members = await guild.members.fetch().catch(() => null);
@@ -25,7 +29,7 @@ async function syncMissingTickets(client, guild) {
     // Pre-scan the ticket category to re-register channels that fell out of DB
     const allChannels = await guild.channels.fetch().catch(() => null);
     const categoryChannels = allChannels
-        ? allChannels.filter(ch => ch?.parentId === config.ticketCategoryId)
+        ? allChannels.filter(ch => ch?.parentId === config.ticketSystem.categoryId)
         : null;
 
     let created = 0;
@@ -33,7 +37,7 @@ async function syncMissingTickets(client, guild) {
     let scanned = 0;
 
     for (const [, member] of members) {
-        if (!member.roles.cache.has(config.bewerberRoleId)) continue;
+        if (!member.roles.cache.has(config.ticketSystem.bewerberRoleId)) continue;
         scanned++;
 
         // Check DB first
@@ -75,7 +79,7 @@ async function syncMissingTickets(client, guild) {
                     id: member.id,
                     allow: [PermissionFlagsBits.ViewChannel],
                 },
-                ...(await buildSupportOverwrites(guild, config.supportPingIds, [PermissionFlagsBits.ViewChannel])),
+                ...(await buildSupportOverwrites(guild, config.ticketSystem.supportPingIds, [PermissionFlagsBits.ViewChannel])),
             ];
 
             if (process.env.BOT_OWNER) {
@@ -88,7 +92,7 @@ async function syncMissingTickets(client, guild) {
             const channel = await guild.channels.create({
                 name: member.user.username.toLowerCase(),
                 type: ChannelType.GuildText,
-                parent: config.ticketCategoryId,
+                parent: config.ticketSystem.categoryId,
                 permissionOverwrites,
                 reason: `Ticket-Sync: fehlender Ticket für ${member.user.tag}`,
             });
@@ -96,9 +100,9 @@ async function syncMissingTickets(client, guild) {
             db.addTicket(channel.id, member.id, guild.id);
 
             const onboardingData = createOnboardingMessage(member);
-            const supportPings = await buildSupportMentions(guild, config.supportPingIds);
-            const rulesChannel = `<#${config.rulesChannelId}>`;
-            const welcomeText = config.welcomeMessage
+            const supportPings = await buildSupportMentions(guild, config.ticketSystem.supportPingIds);
+            const rulesChannel = `<#${config.ticketSystem.rulesChannelId}>`;
+            const welcomeText = config.ticketSystem.welcomeMessage
                 .replace('{user}', `<@${member.id}>`)
                 .replace('{support}', supportPings)
                 .replace('{rules}', rulesChannel);

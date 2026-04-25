@@ -19,10 +19,13 @@ module.exports = {
         const pushResult = (ok, label, detail) => {
             checks.push(`${ok ? 'OK' : 'ERR'} ${label}: ${detail}`);
         };
+
+        pushResult(true, 'ticketSystem.enabled', String(config.ticketSystem.enabled));
+
         // Role checks
         const roleIds = [
-            ['bewerberRoleId', config.bewerberRoleId],
-            ['clanMemberRoleId', config.clanMemberRoleId],
+            ['ticketSystem.bewerberRoleId', config.ticketSystem.bewerberRoleId],
+            ['ticketSystem.clanMemberRoleId', config.ticketSystem.clanMemberRoleId],
         ];
         for (const [key, id] of roleIds) {
             const role = id ? await guild.roles.fetch(id).catch(() => null) : null;
@@ -31,9 +34,9 @@ module.exports = {
 
         // Channel checks
         const channelIds = [
-            ['ticketCategoryId', config.ticketCategoryId],
-            ['rulesChannelId', config.rulesChannelId],
-            ['clanChatId', config.clanChatId],
+            ['ticketSystem.categoryId', config.ticketSystem.categoryId],
+            ['ticketSystem.rulesChannelId', config.ticketSystem.rulesChannelId],
+            ['ticketSystem.clanChatId', config.ticketSystem.clanChatId],
             ['musicChannelId', config.musicChannelId],
         ];
         for (const [key, id] of channelIds) {
@@ -46,16 +49,16 @@ module.exports = {
         }
 
         // supportPingIds can be roles or users
-        if (!Array.isArray(config.supportPingIds) || config.supportPingIds.length === 0) {
-            pushResult(false, 'supportPingIds', 'leer oder ungueltig');
+        if (!Array.isArray(config.ticketSystem.supportPingIds) || config.ticketSystem.supportPingIds.length === 0) {
+            pushResult(false, 'ticketSystem.supportPingIds', 'leer oder ungueltig');
         } else {
             let okCount = 0;
-            for (const id of config.supportPingIds) {
+            for (const id of config.ticketSystem.supportPingIds) {
                 const role = await guild.roles.fetch(id).catch(() => null);
                 const member = role ? null : await guild.members.fetch(id).catch(() => null);
                 if (role || member) okCount++;
             }
-            pushResult(okCount === config.supportPingIds.length, 'supportPingIds', `${okCount}/${config.supportPingIds.length} aufloesbar`);
+            pushResult(okCount === config.ticketSystem.supportPingIds.length, 'ticketSystem.supportPingIds', `${okCount}/${config.ticketSystem.supportPingIds.length} aufloesbar`);
         }
 
         // Destiny activity tracking checks
@@ -91,9 +94,9 @@ module.exports = {
                 if (destiny.postChannelId) {
                     const postChannel = await guild.channels.fetch(destiny.postChannelId).catch(() => null);
                     pushResult(Boolean(postChannel), 'destiny.postChannelId', postChannel ? `gefunden (#${postChannel.name})` : `nicht gefunden (${destiny.postChannelId})`);
-                } else if (config.clanChatId) {
-                    const fallbackChannel = await guild.channels.fetch(config.clanChatId).catch(() => null);
-                    pushResult(Boolean(fallbackChannel), 'destiny.postChannelId', fallbackChannel ? `leer -> Fallback clanChatId (#${fallbackChannel.name})` : `leer -> Fallback clanChatId ungueltig (${config.clanChatId})`);
+                } else if (config.ticketSystem.clanChatId) {
+                    const fallbackChannel = await guild.channels.fetch(config.ticketSystem.clanChatId).catch(() => null);
+                    pushResult(Boolean(fallbackChannel), 'destiny.postChannelId', fallbackChannel ? `leer -> Fallback clanChatId (#${fallbackChannel.name})` : `leer -> Fallback clanChatId ungueltig (${config.ticketSystem.clanChatId})`);
                 } else {
                     pushResult(false, 'destiny.postChannelId', 'leer und kein clanChatId-Fallback gesetzt');
                 }

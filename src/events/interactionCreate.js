@@ -67,20 +67,20 @@ async function handleButton(interaction) {
         const config = configService.get(guild.id);
 
         try {
-            if (targetMember?.roles.cache.has(config.bewerberRoleId)) {
-                await targetMember.roles.remove(config.bewerberRoleId, 'Ticket bearbeitet');
+            if (targetMember?.roles.cache.has(config.ticketSystem.bewerberRoleId)) {
+                await targetMember.roles.remove(config.ticketSystem.bewerberRoleId, 'Ticket bearbeitet');
             }
 
             if (action === 'add' && type === 'clan' && targetMember) {
-                await targetMember.roles.add(config.clanMemberRoleId, 'Befördert zum Clan-Mitglied');
+                await targetMember.roles.add(config.ticketSystem.clanMemberRoleId, 'Befördert zum Clan-Mitglied');
                 await interaction.editReply(`Benutzer <@${targetUserId}> wurde aufgenommen und das Ticket wird geschlossen.`);
 
                 // Send welcome message to clan chat if configured
-                if (config.clanChatId && config.clanChatMessage) {
+                if (config.ticketSystem.clanChatId && config.ticketSystem.clanChatMessage) {
                     try {
-                        const clanChat = await guild.channels.fetch(config.clanChatId).catch(() => null);
+                        const clanChat = await guild.channels.fetch(config.ticketSystem.clanChatId).catch(() => null);
                         if (clanChat?.isTextBased()) {
-                            const welcomeText = config.clanChatMessage.replace('{user}', `<@${targetUserId}>`);
+                            const welcomeText = config.ticketSystem.clanChatMessage.replace('{user}', `<@${targetUserId}>`);
                             await clanChat.send(welcomeText);
                         } else {
                             console.warn('[interactionCreate] clanChatId ist kein Textkanal oder nicht gefunden.');

@@ -13,7 +13,9 @@ module.exports = {
         if (!freshMember) return;
 
         const config = configService.get(freshMember.guild.id);
-        const roleId = config.bewerberRoleId;
+        if (!config.ticketSystem.enabled) return;
+
+        const roleId = config.ticketSystem.bewerberRoleId;
         const hasRole = freshMember.roles.cache.has(roleId);
 
         if (!hasRole) return; // No bewerber role assigned on join → guildMemberUpdate will handle it
@@ -55,7 +57,7 @@ async function handleNewApplicant(member) {
                     PermissionFlagsBits.ViewChannel,
                 ],
             },
-            ...(await buildSupportOverwrites(guild, config.supportPingIds, [PermissionFlagsBits.ViewChannel])),
+            ...(await buildSupportOverwrites(guild, config.ticketSystem.supportPingIds, [PermissionFlagsBits.ViewChannel])),
         ];
 
         if (process.env.BOT_OWNER) {
@@ -68,7 +70,7 @@ async function handleNewApplicant(member) {
         const channel = await guild.channels.create({
             name: member.user.username.toLowerCase(),
             type: ChannelType.GuildText,
-            parent: config.ticketCategoryId,
+            parent: config.ticketSystem.categoryId,
             permissionOverwrites,
             reason: `Neu-Zugang via Invite: ${member.user.tag}`,
         });
@@ -77,9 +79,9 @@ async function handleNewApplicant(member) {
 
         // Prepare and send onboarding message
         const onboardingData = createOnboardingMessage(member);
-        const supportPings = await buildSupportMentions(guild, config.supportPingIds);
-        const rulesChannel = `<#${config.rulesChannelId}>`;
-        const welcomeText = config.welcomeMessage
+        const supportPings = await buildSupportMentions(guild, config.ticketSystem.supportPingIds);
+        const rulesChannel = `<#${config.ticketSystem.rulesChannelId}>`;
+        const welcomeText = config.ticketSystem.welcomeMessage
             .replace('{user}', `<@${member.id}>`)
             .replace('{support}', supportPings)
             .replace('{rules}', rulesChannel);

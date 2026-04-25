@@ -9,6 +9,7 @@ module.exports = {
         .addSubcommand(sub =>
             sub.setName('channels')
                 .setDescription('Konfiguriere wichtige Text/Voice-Kanäle')
+                .addBooleanOption(opt => opt.setName('enabled').setDescription('Ticketsystem aktivieren?').setRequired(false))
                 .addChannelOption(opt => opt.setName('rules').setDescription('Regelwerk-Kanal').setRequired(false))
                 .addChannelOption(opt => opt.setName('clan_chat').setDescription('Clan-Chat Kanal für Willkommensnachrichten').setRequired(false))
                 .addChannelOption(opt => opt.setName('music').setDescription('Voice-Kanal für den Musik-Bot (optional)').setRequired(false))
@@ -66,26 +67,33 @@ module.exports = {
         const updates = {};
 
         if (subcommand === 'channels') {
+            const enabled = interaction.options.getBoolean('enabled');
             const rules = interaction.options.getChannel('rules');
             const clanChat = interaction.options.getChannel('clan_chat');
             const music = interaction.options.getChannel('music');
             const ticketCat = interaction.options.getChannel('ticket_category');
 
-            if (rules) updates.rulesChannelId = rules.id;
-            if (clanChat) updates.clanChatId = clanChat.id;
+            if (enabled !== null || ticketCat || rules || clanChat) {
+                updates.ticketSystem = updates.ticketSystem || {};
+                if (enabled !== null) updates.ticketSystem.enabled = enabled;
+                if (ticketCat) updates.ticketSystem.categoryId = ticketCat.id;
+                if (rules) updates.ticketSystem.rulesChannelId = rules.id;
+                if (clanChat) updates.ticketSystem.clanChatId = clanChat.id;
+            }
             if (music) updates.musicChannelId = music.id;
-            if (ticketCat) updates.ticketCategoryId = ticketCat.id;
 
         } else if (subcommand === 'roles') {
             const bewerber = interaction.options.getRole('bewerber');
             const clanMember = interaction.options.getRole('clan_member');
             const supportPings = interaction.options.getString('support_pings');
 
-            if (bewerber) updates.bewerberRoleId = bewerber.id;
-            if (clanMember) updates.clanMemberRoleId = clanMember.id;
-            if (supportPings) {
-                // Support pings as comma-separated IDs
-                updates.supportPingIds = supportPings.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            if (bewerber || supportPings || clanMember) {
+                updates.ticketSystem = updates.ticketSystem || {};
+                if (bewerber) updates.ticketSystem.bewerberRoleId = bewerber.id;
+                if (clanMember) updates.ticketSystem.clanMemberRoleId = clanMember.id;
+                if (supportPings) {
+                    updates.ticketSystem.supportPingIds = supportPings.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                }
             }
 
         } else if (subcommand === 'destiny') {
@@ -98,7 +106,7 @@ module.exports = {
 
             const finalClanUrl = clanUrl !== null ? clanUrl : currentConfig.destinyActivityTracking.clanUrl;
             const finalPostChannelId = postChannel !== null ? postChannel.id : currentConfig.destinyActivityTracking.postChannelId;
-            const fallbackPostChannelId = currentConfig.clanChatId;
+            const fallbackPostChannelId = currentConfig.ticketSystem.clanChatId;
 
             if (enabled) {
                 if (!finalClanUrl || finalClanUrl.trim() === '') {
@@ -125,18 +133,25 @@ module.exports = {
             const inactivity = interaction.options.getString('inactivity');
             const kickReason = interaction.options.getString('kick_reason');
 
-            if (welcome !== null) updates.welcomeMessage = welcome;
-            if (clanChat !== null) updates.clanChatMessage = clanChat;
-            if (inactivity !== null) updates.inactivityPingMessage = inactivity;
-            if (kickReason !== null) updates.kickReason = kickReason;
+            if (welcome !== null || inactivity !== null || kickReason !== null || clanChat !== null) {
+                updates.ticketSystem = updates.ticketSystem || {};
+                if (welcome !== null) updates.ticketSystem.welcomeMessage = welcome;
+                if (inactivity !== null) updates.ticketSystem.inactivityPingMessage = inactivity;
+                if (kickReason !== null) updates.ticketSystem.kickReason = kickReason;
+                if (clanChat !== null) updates.ticketSystem.clanChatMessage = clanChat;
+            }
+
         } else if (subcommand === 'timeouts') {
             const checkInterval = interaction.options.getInteger('check_interval');
             const pingThreshold = interaction.options.getInteger('ping_threshold');
             const kickThreshold = interaction.options.getInteger('kick_threshold');
 
-            if (checkInterval !== null) updates.checkIntervalMinutes = checkInterval;
-            if (pingThreshold !== null) updates.pingThresholdHours = pingThreshold;
-            if (kickThreshold !== null) updates.kickThresholdHours = kickThreshold;
+            if (checkInterval !== null || pingThreshold !== null || kickThreshold !== null) {
+                updates.ticketSystem = updates.ticketSystem || {};
+                if (checkInterval !== null) updates.ticketSystem.checkIntervalMinutes = checkInterval;
+                if (pingThreshold !== null) updates.ticketSystem.pingThresholdHours = pingThreshold;
+                if (kickThreshold !== null) updates.ticketSystem.kickThresholdHours = kickThreshold;
+            }
         }
 
         if (Object.keys(updates).length > 0) {

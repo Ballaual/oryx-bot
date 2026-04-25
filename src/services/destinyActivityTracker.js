@@ -76,7 +76,7 @@ async function pollOnce(client) {
 
         const channelId =
             config?.destinyActivityTracking?.postChannelId ||
-            config?.clanChatId;
+            config?.ticketSystem?.clanChatId;
         if (!channelId) continue;
 
         const groupId = parseGroupIdFromClanUrl(config?.destinyActivityTracking?.clanUrl);

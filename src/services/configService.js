@@ -7,20 +7,22 @@ const GLOBAL_CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
 const cache = new Map();
 
 const DEFAULT_CONFIG = {
-    ticketCategoryId: "",
-    bewerberRoleId: "",
-    rulesChannelId: "",
-    supportPingIds: [],
-    clanMemberRoleId: "",
-    clanChatId: "",
-    clanChatMessage: "Willkommen, {user}! 🎉 Schön, dass du dabei bist!",
-    welcomeMessage: "Hallo {user} und willkommen auf unserem Server!\n\nBevor es weitergeht lies dir bitte einmal unsere Server-Regeln in {rules} durch.\n\nIm Anschluss wird sich unser Team {support} schnellstmöglich bei dir melden.",
-    inactivityPingMessage: "Hey {user} und {support}! In diesem Ticket herrscht bereits seit über {hours} Stunden Funkstille...👀\nDas Ticket wird nach weiteren {remainingHours} Stunden automatisch geschlossen.",
-    kickReason: "Inaktivität für mehr als {hours} Stunden.",
-    checkIntervalMinutes: 30,
-    pingThresholdHours: 24,
-    kickThresholdHours: 72,
-    musicChannelId: "",
+    ticketSystem: {
+        enabled: false,
+        categoryId: "",
+        bewerberRoleId: "",
+        supportPingIds: [],
+        welcomeMessage: "Hallo {user} und willkommen auf unserem Server!\n\nBevor es weitergeht lies dir bitte einmal unsere Server-Regeln in {rules} durch.\n\nIm Anschluss wird sich unser Team {support} schnellstmöglich bei dir melden.",
+        inactivityPingMessage: "Hey {user} und {support}! In diesem Ticket herrscht bereits seit über {hours} Stunden Funkstille...👀\nDas Ticket wird nach weiteren {remainingHours} Stunden automatisch geschlossen.",
+        kickReason: "Inaktivität für mehr als {hours} Stunden.",
+        checkIntervalMinutes: 30,
+        pingThresholdHours: 24,
+        kickThresholdHours: 72,
+        rulesChannelId: "",
+        clanMemberRoleId: "",
+        clanChatId: "",
+        clanChatMessage: "Willkommen, {user}! 🎉 Schön, dass du dabei bist!",
+    },
     destinyActivityTracking: {
         enabled: false,
         clanUrl: "",
@@ -28,7 +30,8 @@ const DEFAULT_CONFIG = {
         pollIntervalMinutes: 3,
         mode: "",
         allowCheckpointClears: true
-    }
+    },
+    musicChannelId: "",
 };
 
 function getGuildConfigPath(guildId) {
@@ -41,7 +44,41 @@ function loadConfig(guildId) {
         try {
             const fileData = fs.readFileSync(configPath, 'utf8');
             const data = JSON.parse(fileData);
-            return { ...DEFAULT_CONFIG, ...data };
+
+            // Migration logic: Map old flat keys to new nested structure
+            if (data.ticketSystem === undefined || data.rulesChannelId !== undefined) {
+                const old = data.ticketSystem || {};
+                data.ticketSystem = {
+                    enabled: old.enabled ?? data.ticketsEnabled ?? DEFAULT_CONFIG.ticketSystem.enabled,
+                    categoryId: old.categoryId ?? data.ticketCategoryId ?? DEFAULT_CONFIG.ticketSystem.categoryId,
+                    bewerberRoleId: old.bewerberRoleId ?? data.bewerberRoleId ?? DEFAULT_CONFIG.ticketSystem.bewerberRoleId,
+                    supportPingIds: old.supportPingIds ?? data.supportPingIds ?? DEFAULT_CONFIG.ticketSystem.supportPingIds,
+                    welcomeMessage: old.welcomeMessage ?? data.welcomeMessage ?? DEFAULT_CONFIG.ticketSystem.welcomeMessage,
+                    inactivityPingMessage: old.inactivityPingMessage ?? data.inactivityPingMessage ?? DEFAULT_CONFIG.ticketSystem.inactivityPingMessage,
+                    kickReason: old.kickReason ?? data.kickReason ?? DEFAULT_CONFIG.ticketSystem.kickReason,
+                    checkIntervalMinutes: old.checkIntervalMinutes ?? data.checkIntervalMinutes ?? DEFAULT_CONFIG.ticketSystem.checkIntervalMinutes,
+                    pingThresholdHours: old.pingThresholdHours ?? data.pingThresholdHours ?? DEFAULT_CONFIG.ticketSystem.pingThresholdHours,
+                    kickThresholdHours: old.kickThresholdHours ?? data.kickThresholdHours ?? DEFAULT_CONFIG.ticketSystem.kickThresholdHours,
+                    // New fields to migrate
+                    rulesChannelId: data.rulesChannelId ?? DEFAULT_CONFIG.ticketSystem.rulesChannelId,
+                    clanMemberRoleId: data.clanMemberRoleId ?? DEFAULT_CONFIG.ticketSystem.clanMemberRoleId,
+                    clanChatId: data.clanChatId ?? DEFAULT_CONFIG.ticketSystem.clanChatId,
+                    clanChatMessage: data.clanChatMessage ?? DEFAULT_CONFIG.ticketSystem.clanChatMessage,
+                };
+
+                // Set top-level musicChannelId from old config or default
+                data.musicChannelId = data.musicChannelId ?? DEFAULT_CONFIG.musicChannelId;
+
+                // Remove old keys to keep it clean
+                [
+                    'ticketsEnabled', 'ticketCategoryId', 'bewerberRoleId', 'supportPingIds',
+                    'welcomeMessage', 'inactivityPingMessage', 'kickReason',
+                    'checkIntervalMinutes', 'pingThresholdHours', 'kickThresholdHours',
+                    'rulesChannelId', 'clanMemberRoleId', 'clanChatId', 'clanChatMessage'
+                ].forEach(key => delete data[key]);
+            }
+
+            return { ...DEFAULT_CONFIG, ...data, ticketSystem: { ...DEFAULT_CONFIG.ticketSystem, ...data.ticketSystem } };
         } catch (error) {
             console.error(`[ConfigService] Error reading config for guild ${guildId}:`, error);
         }
@@ -70,16 +107,24 @@ function get(guildId) {
 function set(guildId, updates) {
     if (!guildId) return;
     const current = get(guildId);
-    
-    // Deep merge for destinyActivityTracking
+
+    // Deep merge for nested objects
     const newConfig = { ...current, ...updates };
+
+    if (updates.ticketSystem) {
+        newConfig.ticketSystem = {
+            ...current.ticketSystem,
+            ...updates.ticketSystem
+        };
+    }
+
     if (updates.destinyActivityTracking) {
         newConfig.destinyActivityTracking = {
             ...current.destinyActivityTracking,
             ...updates.destinyActivityTracking
         };
     }
-    
+
     cache.set(guildId, newConfig);
 
     if (!fs.existsSync(CONFIG_DIR)) {
@@ -103,7 +148,7 @@ function migrate() {
             if (data.guildId) {
                 const guildId = data.guildId;
                 const newPath = getGuildConfigPath(guildId);
-                
+
                 // If guild config doesn't exist yet, copy it over
                 if (!fs.existsSync(newPath)) {
                     console.log(`[ConfigService] Migrating global config.json to ${guildId}.json...`);
@@ -112,7 +157,7 @@ function migrate() {
                     delete data.guildId;
                     fs.writeFileSync(newPath, JSON.stringify(data, null, 2), 'utf8');
                 }
-                
+
                 // Rename old config to avoid re-migration/confusion
                 const backupPath = path.join(CONFIG_DIR, 'config.json.backup');
                 fs.renameSync(GLOBAL_CONFIG_PATH, backupPath);

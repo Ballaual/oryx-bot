@@ -15,8 +15,10 @@ async function checkInactivity(client) {
     for (const ticketData of tickets) {
         try {
             const config = configService.get(ticketData.guild_id);
-            const pingHours = config.pingThresholdHours || 24;
-            const kickHours = config.kickThresholdHours || 72;
+            if (!config.ticketSystem.enabled) continue;
+
+            const pingHours = config.ticketSystem.pingThresholdHours || 24;
+            const kickHours = config.ticketSystem.kickThresholdHours || 72;
             const pingThreshold = pingHours * 60 * 60 * 1000;
             const kickThreshold = kickHours * 60 * 60 * 1000;
 
@@ -50,7 +52,7 @@ async function checkInactivity(client) {
 
                 if (member) {
                     if (member.kickable) {
-                        const reason = config.kickReason.replace('{hours}', kickHours);
+                        const reason = config.ticketSystem.kickReason.replace('{hours}', kickHours);
                         await member.kick(reason);
                         await channel.send(`Trotz Erinnerung herrscht in diesem Ticket weiterhin Funkstille, daher wird es nun geschlossen.`);
                         await channel.send(`Kicke den User <@${ticketData.user_id}> wegen Inaktivität (${kickHours}h).`);
@@ -73,10 +75,10 @@ async function checkInactivity(client) {
 
                 const guild = client.guilds.cache.get(ticketData.guild_id);
                 const supportPings = guild
-                    ? await buildSupportMentions(guild, config.supportPingIds)
-                    : config.supportPingIds.map(id => `<@&${id}>`).join(' ');
+                    ? await buildSupportMentions(guild, config.ticketSystem.supportPingIds)
+                    : config.ticketSystem.supportPingIds.map(id => `<@&${id}>`).join(' ');
                 const remainingHours = kickHours - pingHours;
-                const message = config.inactivityPingMessage
+                const message = config.ticketSystem.inactivityPingMessage
                     .replace('{user}', `<@${ticketData.user_id}>`)
                     .replace('{support}', supportPings)
                     .replace('{hours}', pingHours)
