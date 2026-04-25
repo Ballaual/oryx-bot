@@ -34,7 +34,7 @@ module.exports = {
                     .addChoices(
                         { name: 'Raid', value: 'Raid' },
                         { name: 'Dungeon', value: 'Dungeon' },
-                        { name: 'Beides', value: '' }
+                        { name: 'Beides', value: 'Both' }
                     )
                 )
                 .addBooleanOption(opt => opt.setName('allow_checkpoint_clears').setDescription('Checkpoint Clears erlauben?').setRequired(false))
