@@ -16,7 +16,7 @@ module.exports = {
         const query = interaction.options.getString('query');
         const voiceChannel = interaction.member.voice.channel;
 
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
 
         try {
             await interaction.client.distube.play(voiceChannel, query, {

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const config = require('../../../config/config.json');
 const {
     findLatestCompletedForClan,
@@ -11,6 +11,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('last')
         .setDescription('Postet die letzte Clan- oder Spieler-Aktivität (Raid/Dungeon)')
+        .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
         .addStringOption((opt) =>
             opt
                 .setName('id')

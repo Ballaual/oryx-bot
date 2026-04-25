@@ -5,6 +5,6 @@ module.exports = {
         .setName('ping')
         .setDescription('Prüft ob der Bot online ist'),
     async execute(interaction) {
-        await interaction.reply('Pong! Der Bot läuft.');
+        await interaction.reply({ content: 'Pong! Der Bot läuft.', ephemeral: true });
     },
 };
