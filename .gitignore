@@ -4,5 +4,4 @@ node_modules/
 *.sqlite-journal
 *.log
 .DS_Store
-config/config.json
-config/cookies.txt
+config/*

@@ -1,6 +1,6 @@
 const { ChannelType, PermissionFlagsBits } = require('discord.js');
 const db = require('./database');
-const config = require('../../config/config.json');
+const configService = require('./configService');
 const { createOnboardingMessage } = require('../utils/embeds');
 const { buildSupportMentions, buildSupportOverwrites } = require('../utils/mentions');
 
@@ -13,6 +13,7 @@ const { buildSupportMentions, buildSupportOverwrites } = require('../utils/menti
  */
 async function syncMissingTickets(client, guild) {
     console.log('[ticket-sync] Running ticket-sync...');
+    const config = configService.get(guild.id);
 
     // Fetch all members so the cache is complete (requires GuildMembers intent)
     const members = await guild.members.fetch().catch(() => null);
@@ -77,9 +78,9 @@ async function syncMissingTickets(client, guild) {
                 ...(await buildSupportOverwrites(guild, config.supportPingIds, [PermissionFlagsBits.ViewChannel])),
             ];
 
-            if (config.botOwner) {
+            if (process.env.BOT_OWNER) {
                 permissionOverwrites.push({
-                    id: config.botOwner,
+                    id: process.env.BOT_OWNER,
                     allow: [PermissionFlagsBits.ViewChannel],
                 });
             }

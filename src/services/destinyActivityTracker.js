@@ -1,4 +1,4 @@
-const config = require('../../config/config.json');
+const configService = require('./configService');
 const db = require('./database');
 const {
     parseGroupIdFromClanUrl,
@@ -33,7 +33,7 @@ async function postSummaryToDiscord(client, { channelId, instanceId, mode }) {
     return postSummaryToDiscordForInteraction(client, { channelId, instanceId, mode });
 }
 
-function getTrackerFilters() {
+function getTrackerFilters(config) {
     const settings = config?.destinyActivityTracking || {};
     const modeFilter = String(settings?.mode || '').trim().toLowerCase();
     return {
@@ -67,28 +67,34 @@ async function shouldPostActivity(instanceId, mode, filters) {
 }
 
 async function pollOnce(client) {
-    const enabled = config?.destinyActivityTracking?.enabled !== false;
-    if (!enabled) return;
+    let anyGuildPolled = false;
 
-    const channelId =
-        config?.destinyActivityTracking?.postChannelId ||
-        config?.clanChatId;
-    if (!channelId) return;
+    for (const guild of client.guilds.cache.values()) {
+        const config = configService.get(guild.id);
+        const enabled = config?.destinyActivityTracking?.enabled === true;
+        if (!enabled) continue;
 
-    const groupId = parseGroupIdFromClanUrl(config?.destinyActivityTracking?.clanUrl);
-    if (!groupId) {
-        console.warn('[DestinyTracker] clanUrl missing/invalid (config.destinyActivityTracking.clanUrl)');
-        return;
-    }
+        const channelId =
+            config?.destinyActivityTracking?.postChannelId ||
+            config?.clanChatId;
+        if (!channelId) continue;
 
-    let clanMembers = [];
-    const filters = getTrackerFilters();
-    try {
-        clanMembers = await listClanMembers(groupId);
-    } catch (e) {
-        console.warn('[DestinyTracker] listClanMembers failed:', e?.message || e);
-        return;
-    }
+        const groupId = parseGroupIdFromClanUrl(config?.destinyActivityTracking?.clanUrl);
+        if (!groupId) {
+            console.warn(`[DestinyTracker] clanUrl missing/invalid for guild ${guild.id}`);
+            continue;
+        }
+
+        anyGuildPolled = true;
+
+        let clanMembers = [];
+        const filters = getTrackerFilters(config);
+        try {
+            clanMembers = await listClanMembers(groupId);
+        } catch (e) {
+            console.warn(`[DestinyTracker] listClanMembers failed for guild ${guild.id}:`, e?.message || e);
+            continue;
+        }
 
     for (const m of clanMembers) {
         const membershipId = m.membershipId;
@@ -147,24 +153,20 @@ async function pollOnce(client) {
 
         await sleep(350);
     }
+        await sleep(350);
+    } // End of guild loop
 
-    if (!warmupCompleted) {
+    if (!warmupCompleted && anyGuildPolled) {
         warmupCompleted = true;
         console.log('[DestinyTracker] warmup complete - posting only new activities from now on.');
     }
 }
 
 function startDestinyActivityTracker(client) {
-    const enabled = config?.destinyActivityTracking?.enabled !== false;
-    if (!enabled) {
-        console.log('[DestinyTracker] disabled via config.destinyActivityTracking.enabled=false');
-        return;
-    }
-
-    const pollMinutes = Number(config?.destinyActivityTracking?.pollIntervalMinutes ?? DEFAULT_POLL_MINUTES);
+    const pollMinutes = DEFAULT_POLL_MINUTES;
     const intervalMs = Math.max(1, pollMinutes) * 60 * 1000;
 
-    console.log(`[DestinyTracker] starting (interval=${pollMinutes}m)`);
+    console.log(`[DestinyTracker] starting global poll (interval=${pollMinutes}m)`);
 
     // initial delay (let bot finish startup)
     setTimeout(() => {

@@ -1,7 +1,8 @@
-const config = require('../../config/config.json');
+const configService = require('../services/configService');
 const { isSupportMember } = require('./mentions');
 
-function isSupportUser(member) {
+function isSupportUser(member, guildId) {
+    const config = configService.get(guildId);
     return isSupportMember(member, config.supportPingIds);
 }
 

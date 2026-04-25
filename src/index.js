@@ -21,6 +21,10 @@ fs.rmdirSync = function(dir, options) {
     return originalRmdirSync(dir, options);
 };
 const { initMusicService } = require('./services/music');
+const configService = require('./services/configService');
+
+// Migrate old config before doing anything else
+configService.migrate();
 
 // Client initialisieren
 const client = new Client({

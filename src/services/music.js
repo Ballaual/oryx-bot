@@ -3,7 +3,7 @@ const { YtDlpPlugin, json: ytDlpJson } = require('@distube/yt-dlp');
 const { YouTubePlugin } = require('@distube/youtube');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { EmbedBuilder, MessageFlags } = require('discord.js');
-const config = require('../../config/config.json');
+const configService = require('./configService');
 
 const ffmpegStaticPath = require('ffmpeg-static');
 
@@ -327,6 +327,7 @@ function initMusicService(client) {
 function checkMusicPermissions(interaction) {
     const { member, guild } = interaction;
     const voiceChannel = member.voice.channel;
+    const config = configService.get(guild.id);
 
     if (!voiceChannel) {
         interaction.reply({ content: '❌ Du musst in einem Voice-Kanal sein, um Musik abspielen zu können!', flags: [MessageFlags.Ephemeral] });

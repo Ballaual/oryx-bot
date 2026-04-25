@@ -1,6 +1,5 @@
 const { Events } = require('discord.js');
 const { startScheduler } = require('../services/scheduler');
-const config = require('../../config/config.json');
 const { startDestinyActivityTracker } = require('../services/destinyActivityTracker');
 const { syncMissingTickets } = require('../services/ticketSync');
 
@@ -20,10 +19,11 @@ module.exports = {
         // Start Destiny raid/dungeon summary tracker (optional via config + env BUNGIE_API_KEY)
         startDestinyActivityTracker(client);
 
-        const guild = await client.guilds.fetch(config.guildId).catch(() => null);
-        if (!guild) return console.error('[ready] Guild not found.');
-
         // Ensure every bewerber member has an onboarding ticket
-        await syncMissingTickets(client, guild);
+        for (const guild of client.guilds.cache.values()) {
+            await syncMissingTickets(client, guild).catch(err => {
+                console.error(`[ready] Error syncing tickets for guild ${guild.id}:`, err);
+            });
+        }
     },
 };

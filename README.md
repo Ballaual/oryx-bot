@@ -14,9 +14,10 @@ Discord-Bot fuer Onboarding, Inaktivitaets-Management, Destiny Activity Tracking
 ## Slash-Commands
 
 ### Moderation & System
+- `/setup`: Richtet den Bot für den aktuellen Server ein (Rollen, Kanäle, Destiny-Tracker). (Administrator)
 - `/ping`: Prueft, ob der Bot erreichbar ist.
 - `/clear [amount]`: Loescht 1-100 Nachrichten im aktuellen Kanal.
-- `/config-check`: Validiert wichtige Config-Werte (Guild, Rollen, Kanaele, Support-IDs). (ManageGuild)
+- `/config-check`: Validiert wichtige Config-Werte (Rollen, Kanaele, Support-IDs) für den Server. (ManageGuild)
 - `/status`: Zeigt Bot-Health (Uptime, Ping, Speicher, aktive Tickets). (ManageGuild)
 - `/sync-tickets`: Synchronisiert fehlende Onboarding-Tickets fuer Bewerber. (ManageGuild)
 
@@ -48,17 +49,19 @@ Discord-Bot fuer Onboarding, Inaktivitaets-Management, Destiny Activity Tracking
    ```bash
    npm install
    ```
-2. `.env` anlegen:
+2. `.env` anlegen (siehe `.env.example`):
    ```env
    DISCORD_TOKEN=DEIN_BOT_TOKEN
+   CLIENT_ID=DEINE_CLIENT_ID
    DATABASE_PATH=./data/database.sqlite
    BUNGIE_API_KEY=DEIN_BUNGIE_API_KEY
+   BOT_OWNER=DEINE_DISCORD_USER_ID
    ```
-3. `config/config.json` erstellen (z. B. aus `config/config.json.example`) und IDs eintragen.
-4. Bot starten:
+3. Bot starten:
    ```bash
    npm run start
    ```
+   Der Bot legt Konfigurationen nun pro Server unter `config/<guildId>.json` an. Ältere globale `config.json` Dateien werden beim Start automatisch migriert.
 
 ## Logging
 
@@ -66,21 +69,18 @@ Discord-Bot fuer Onboarding, Inaktivitaets-Management, Destiny Activity Tracking
   - `[2026-04-25T15:53:12.345Z] ...`
 - Das gilt global fuer alle Module, Events und Commands.
 
-## Konfiguration (`config/config.json`)
+## Konfiguration (Per-Guild)
 
-Kernfelder:
-- `guildId`: Ziel-Guild, in der der Bot arbeiten soll.
-- `ticketCategoryId`: Kategorie fuer Onboarding-Tickets.
-- `bewerberRoleId`: Rolle, die den Onboarding-Prozess startet.
-- `supportPingIds`: Rollen/User, die in Ticket-Pings und Begruessung erwaehnt werden.
-- `rulesChannelId`: Regeln-Channel fuer Platzhalter in Begruessungstexten.
-- `checkIntervalMinutes`: Intervall fuer Inaktivitaets-Checks.
-- `pingThresholdHours`: Nach wie vielen Stunden der erste Ping geschickt wird.
-- `kickThresholdHours`: Nach wie vielen Stunden das Ticket geschlossen wird.
-- `musicChannelId`: Optionaler Voice-Channel fuer Musikbefehle. Leer (`""`) bedeutet keine Channel-Bindung.
-- `clanChatId` und `clanChatMessage`: Optionales Willkommensposting bei erfolgreicher Aufnahme.
+Der Bot unterstützt die Nutzung auf mehreren Servern gleichzeitig. Die Konfiguration erfolgt bequem direkt im Discord über den `/setup` Slash-Command. Dieser Command ist nur für Nutzer mit **Administrator**-Rechten zugänglich.
 
-Texte mit Platzhaltern:
+Alle Server-Einstellungen werden lokal unter `config/<guildId>.json` gespeichert.
+
+Mit `/setup` lassen sich folgende Kategorien konfigurieren:
+- **channels**: Musik-Kanal, Regeln-Kanal, Ticket-Kategorie, Clan-Chat.
+- **roles**: Bewerber-Rolle, Clan-Mitglied-Rolle, Support-Ping IDs (als kommagetrennte Liste).
+- **destiny**: Aktivierung des Trackers, Clan URL, Post-Kanal, Polling-Intervall.
+
+Folgende Standard-Nachrichten/Texte werden aktuell verwendet:
 - `welcomeMessage`: unterstuetzt `{user}`, `{support}`, `{rules}`
 - `inactivityPingMessage`: unterstuetzt `{user}`, `{support}`, `{hours}`, `{remainingHours}`
 - `kickReason`: unterstuetzt `{hours}`

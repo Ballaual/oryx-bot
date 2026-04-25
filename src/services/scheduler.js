@@ -1,5 +1,5 @@
 const db = require('./database');
-const config = require('../../config/config.json');
+const configService = require('./configService');
 const { buildSupportMentions } = require('../utils/mentions');
 
 function ts() {
@@ -9,18 +9,17 @@ function ts() {
 async function checkInactivity(client) {
     console.log(`[${ts()}] Running inactivity check...`);
 
-    // Thresholds from config
-    const pingHours = config.pingThresholdHours || 24;
-    const kickHours = config.kickThresholdHours || 48;
-
-    const pingThreshold = pingHours * 60 * 60 * 1000;
-    const kickThreshold = kickHours * 60 * 60 * 1000;
-
     const now = Date.now();
     const tickets = db.getAllTickets();
 
     for (const ticketData of tickets) {
         try {
+            const config = configService.get(ticketData.guild_id);
+            const pingHours = config.pingThresholdHours || 24;
+            const kickHours = config.kickThresholdHours || 72;
+            const pingThreshold = pingHours * 60 * 60 * 1000;
+            const kickThreshold = kickHours * 60 * 60 * 1000;
+
             let channel;
             try {
                 channel = await client.channels.fetch(ticketData.ticket_channel_id);
@@ -93,7 +92,8 @@ async function checkInactivity(client) {
 }
 
 function startScheduler(client) {
-    const interval = (config.checkIntervalMinutes || 30) * 60 * 1000;
+    // Global interval check runs every 30 minutes
+    const interval = 30 * 60 * 1000;
     setInterval(() => checkInactivity(client), interval);
 
     // Initial check after startup

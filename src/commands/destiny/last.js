@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const config = require('../../../config/config.json');
+const configService = require('../../services/configService');
 const {
     findLatestCompletedForClan,
     getPgcr,
@@ -30,6 +30,7 @@ module.exports = {
         ),
     async execute(interaction) {
         await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+        const config = configService.get(interaction.guildId);
 
         const instanceIdInput = interaction.options.getString('id');
         const mode = interaction.options.getString('mode');

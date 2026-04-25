@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
-const config = require('../../../config/config.json');
+const configService = require('../../services/configService');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,19 +13,12 @@ module.exports = {
         }
 
         const guild = interaction.guild;
+        const config = configService.get(guild.id);
         const checks = [];
 
         const pushResult = (ok, label, detail) => {
             checks.push(`${ok ? 'OK' : 'ERR'} ${label}: ${detail}`);
         };
-
-        // Guild ID check
-        pushResult(
-            guild.id === config.guildId,
-            'guildId',
-            guild.id === config.guildId ? `passt (${config.guildId})` : `Config=${config.guildId}, Aktuell=${guild.id}`
-        );
-
         // Role checks
         const roleIds = [
             ['bewerberRoleId', config.bewerberRoleId],

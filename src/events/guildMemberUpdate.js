@@ -1,19 +1,17 @@
 const { Events, ChannelType, PermissionFlagsBits } = require('discord.js');
 const db = require('../services/database');
-const config = require('../../config/config.json');
+const configService = require('../services/configService');
 const { createOnboardingMessage } = require('../utils/embeds');
 const { buildSupportMentions, buildSupportOverwrites } = require('../utils/mentions');
 
 module.exports = {
     name: Events.GuildMemberUpdate,
     async execute(oldMember, newMember) {
-        // Only track specific guild
-        if (newMember.guild.id !== config.guildId) return;
-
         // Ensure we have the current member object
         const newM = newMember.partial ? await newMember.fetch().catch(() => null) : newMember;
         if (!newM) return;
 
+        const config = configService.get(newM.guild.id);
         const roleId = config.bewerberRoleId;
         const hasRoleNow = newM.roles.cache.has(roleId);
 
@@ -36,6 +34,7 @@ async function handleNewApplicant(member) {
     console.log(`[guildMemberUpdate] Rolle hinzugefügt für ${member.user.tag}. Starte Onboarding...`);
 
     const { guild } = member;
+    const config = configService.get(guild.id);
 
     try {
         // Build permission overwrites: deny @everyone, allow bewerber + support roles
@@ -59,9 +58,9 @@ async function handleNewApplicant(member) {
             ...(await buildSupportOverwrites(guild, config.supportPingIds, [PermissionFlagsBits.ViewChannel])),
         ];
 
-        if (config.botOwner) {
+        if (process.env.BOT_OWNER) {
             permissionOverwrites.push({
-                id: config.botOwner,
+                id: process.env.BOT_OWNER,
                 allow: [PermissionFlagsBits.ViewChannel],
             });
         }

@@ -1,5 +1,4 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const config = require('../../config/config.json');
 
 /**
  * Creates the standard onboarding embed and button row for new members.

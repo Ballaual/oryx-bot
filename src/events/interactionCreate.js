@@ -1,6 +1,6 @@
 const { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const db = require('../services/database');
-const config = require('../../config/config.json');
+const configService = require('../services/configService');
 const { isSupportUser } = require('../utils/permissions');
 
 module.exports = {
@@ -37,7 +37,7 @@ async function handleButton(interaction) {
 
     // --- BUNGIE ID MODAL ---
     if (action === 'set' && type === 'bungie') {
-        if (user.id !== targetUserId && !isSupportUser(member)) {
+        if (user.id !== targetUserId && !isSupportUser(member, guild.id)) {
             return interaction.reply({ content: 'Nur der User selbst oder ein Moderator kann die Bungie ID setzen.', flags: [MessageFlags.Ephemeral] });
         }
 
@@ -58,12 +58,13 @@ async function handleButton(interaction) {
 
     // --- SUPPORT ACTIONS (CLOSE/ADD) ---
     if (action === 'close' || action === 'add') {
-        if (!isSupportUser(member)) {
+        if (!isSupportUser(member, guild.id)) {
             return interaction.reply({ content: 'Nur Moderatoren können diese Aktion ausführen.', flags: [MessageFlags.Ephemeral] });
         }
 
         await interaction.deferReply();
         const targetMember = await guild.members.fetch(targetUserId).catch(() => null);
+        const config = configService.get(guild.id);
 
         try {
             if (targetMember?.roles.cache.has(config.bewerberRoleId)) {
