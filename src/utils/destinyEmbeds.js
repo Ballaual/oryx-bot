@@ -44,11 +44,10 @@ function reportPlatformFromMembershipType(membershipType) {
     return null;
 }
 
-function raidhubProfileUrl(membershipType, membershipId) {
-    const type = Number(membershipType);
+function raidhubProfileUrl(membershipId) {
     const id = String(membershipId || '').trim();
-    if (!id || !Number.isFinite(type)) return null;
-    return `https://raidhub.io/player/${type}/${id}`;
+    if (!id) return null;
+    return `https://raidhub.io/profile/${id}`;
 }
 
 function dungeonReportProfileUrl(membershipType, membershipId) {
@@ -146,7 +145,7 @@ async function buildFireteamLines(pgcr, mode, instanceId) {
             ? `${p.bungieGlobalDisplayName}#${String(p.bungieGlobalDisplayNameCode).padStart(4, '0')}`
             : (p?.displayName || 'Unknown');
         const profileUrl = isRaid
-            ? raidhubProfileUrl(p?.membershipType, p?.membershipId)
+            ? raidhubProfileUrl(p?.membershipId)
             : isDungeon
                 ? dungeonReportProfileUrl(p?.membershipType, p?.membershipId)
                 : null;
