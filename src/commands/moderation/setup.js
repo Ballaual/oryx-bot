@@ -28,8 +28,33 @@ module.exports = {
                 .addStringOption(opt => opt.setName('clan_url').setDescription('Bungie.net Clan URL').setRequired(false))
                 .addChannelOption(opt => opt.setName('post_channel').setDescription('Kanal für Activity Posts').setRequired(false))
                 .addIntegerOption(opt => opt.setName('poll_interval').setDescription('Abfrage-Intervall in Minuten (Standard: 3)').setRequired(false))
+                .addStringOption(opt => opt.setName('mode')
+                    .setDescription('Aktivitäts-Modus')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'Raid', value: 'Raid' },
+                        { name: 'Dungeon', value: 'Dungeon' },
+                        { name: 'Beides', value: '' }
+                    )
+                )
+                .addBooleanOption(opt => opt.setName('allow_checkpoint_clears').setDescription('Checkpoint Clears erlauben?').setRequired(false))
+        )
+        .addSubcommand(sub =>
+            sub.setName('messages')
+                .setDescription('Konfiguriere Bot-Nachrichten')
+                .addStringOption(opt => opt.setName('welcome').setDescription('Willkommensnachricht im Ticket').setRequired(false))
+                .addStringOption(opt => opt.setName('clan_chat').setDescription('Nachricht bei Clan-Aufnahme').setRequired(false))
+                .addStringOption(opt => opt.setName('inactivity').setDescription('Ping-Nachricht bei Inaktivität').setRequired(false))
+                .addStringOption(opt => opt.setName('kick_reason').setDescription('Kick-Grund wegen Inaktivität').setRequired(false))
+        )
+        .addSubcommand(sub =>
+            sub.setName('timeouts')
+                .setDescription('Konfiguriere Ticket-Timeouts (in Stunden/Minuten)')
+                .addIntegerOption(opt => opt.setName('check_interval').setDescription('Check-Intervall in Minuten').setRequired(false))
+                .addIntegerOption(opt => opt.setName('ping_threshold').setDescription('Ping-Schwelle in Stunden').setRequired(false))
+                .addIntegerOption(opt => opt.setName('kick_threshold').setDescription('Kick-Schwelle in Stunden').setRequired(false))
         ),
-    
+
     async execute(interaction) {
         if (!interaction.guild) {
             return interaction.reply({ content: 'Dieser Befehl funktioniert nur in einem Server.', flags: [MessageFlags.Ephemeral] });
@@ -68,6 +93,8 @@ module.exports = {
             const clanUrl = interaction.options.getString('clan_url');
             const postChannel = interaction.options.getChannel('post_channel');
             const pollInterval = interaction.options.getInteger('poll_interval');
+            const mode = interaction.options.getString('mode');
+            const allowCheckpointClears = interaction.options.getBoolean('allow_checkpoint_clears');
 
             updates.destinyActivityTracking = {
                 ...currentConfig.destinyActivityTracking,
@@ -77,6 +104,26 @@ module.exports = {
             if (clanUrl !== null) updates.destinyActivityTracking.clanUrl = clanUrl;
             if (postChannel !== null) updates.destinyActivityTracking.postChannelId = postChannel.id;
             if (pollInterval !== null) updates.destinyActivityTracking.pollIntervalMinutes = pollInterval;
+            if (mode !== null) updates.destinyActivityTracking.mode = mode === 'Both' ? '' : mode;
+            if (allowCheckpointClears !== null) updates.destinyActivityTracking.allowCheckpointClears = allowCheckpointClears;
+        } else if (subcommand === 'messages') {
+            const welcome = interaction.options.getString('welcome');
+            const clanChat = interaction.options.getString('clan_chat');
+            const inactivity = interaction.options.getString('inactivity');
+            const kickReason = interaction.options.getString('kick_reason');
+
+            if (welcome !== null) updates.welcomeMessage = welcome;
+            if (clanChat !== null) updates.clanChatMessage = clanChat;
+            if (inactivity !== null) updates.inactivityPingMessage = inactivity;
+            if (kickReason !== null) updates.kickReason = kickReason;
+        } else if (subcommand === 'timeouts') {
+            const checkInterval = interaction.options.getInteger('check_interval');
+            const pingThreshold = interaction.options.getInteger('ping_threshold');
+            const kickThreshold = interaction.options.getInteger('kick_threshold');
+
+            if (checkInterval !== null) updates.checkIntervalMinutes = checkInterval;
+            if (pingThreshold !== null) updates.pingThresholdHours = pingThreshold;
+            if (kickThreshold !== null) updates.kickThresholdHours = kickThreshold;
         }
 
         if (Object.keys(updates).length > 0) {
