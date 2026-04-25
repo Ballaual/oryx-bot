@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+.github
+Dockerfile
+*.sqlite
+*.sqlite-journal
+README.md
+implementation_plan.md
+task.md
+walkthrough.md

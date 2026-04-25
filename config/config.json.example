@@ -1,0 +1,28 @@
+{
+  "guildId": "YOUR_GUILD_ID",
+  "botOwner": "YOUR_BOT_OWNER_ID",
+  "ticketCategoryId": "YOUR_TICKET_CATEGORY_ID",
+  "bewerberRoleId": "YOUR_BEWERBER_ROLE_ID",
+    "rulesChannelId": "RULES_CHANNEL_ID_HERE",
+  "supportPingIds": [
+    "YOUR_SUPPORT_ROLE_ID"
+  ],
+  "clanMemberRoleId": "YOUR_CLAN_MEMBER_ROLE_ID",
+  "clanChatId": "YOUR_CLAN_CHAT_CHANNEL_ID",
+  "clanChatMessage": "Willkommen im Clan, {user}! 🎉 Schön, dass du dabei bist!",
+  "welcomeMessage": "Hallo {user}! Willkommen bei der Oryx Putzkolonne.\n\nBitte lies dir die nachfolgenden Fragen schon einmal in Ruhe durch und beantworte uns diese, möglichst vollständig, hier im Chat. Unser {support} wird sich schnellstmöglich hier bei Dir melden, um ein persönliches Gespräch zu vereinbaren.",
+  "inactivityPingMessage": "Hey {user} und {support}! In diesem Ticket herrscht bereits seit über {hours} Stunden Funktstille. Das Ticket wird nach weiteren {remainingHours} Stunden automatisch geschlossen.",
+  "kickReason": "Inaktivität für mehr als {hours} Stunden.",
+  "checkIntervalMinutes": 30,
+  "pingThresholdHours": 1,
+  "kickThresholdHours": 72,
+  "musicChannelId": "",
+  "destinyActivityTracking": {
+    "enabled": true,
+    "clanUrl": "https://www.bungie.net/en/ClanV2?groupid=1234567",
+    "postChannelId": "",
+    "pollIntervalMinutes": 3,
+    "mode": "",
+    "allowCheckpointClears": false
+  }
+}

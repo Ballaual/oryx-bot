@@ -1,0 +1,10 @@
+services:
+  oryx-bot:
+    image: ghcr.io/ballaual/oryx-bot:latest
+    container_name: oryx-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
