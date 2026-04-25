@@ -96,6 +96,19 @@ module.exports = {
             const mode = interaction.options.getString('mode');
             const allowCheckpointClears = interaction.options.getBoolean('allow_checkpoint_clears');
 
+            const finalClanUrl = clanUrl !== null ? clanUrl : currentConfig.destinyActivityTracking.clanUrl;
+            const finalPostChannelId = postChannel !== null ? postChannel.id : currentConfig.destinyActivityTracking.postChannelId;
+            const fallbackPostChannelId = currentConfig.clanChatId;
+
+            if (enabled) {
+                if (!finalClanUrl || finalClanUrl.trim() === '') {
+                    return interaction.reply({ content: '❌ Fehler: Bitte eine `clan_url` angeben, um das Tracking zu aktivieren!', flags: [MessageFlags.Ephemeral] });
+                }
+                if (!finalPostChannelId && !fallbackPostChannelId) {
+                    return interaction.reply({ content: '❌ Fehler: Bitte einen `post_channel` angeben (oder den `clan_chat` Kanal konfigurieren), um das Tracking zu aktivieren!', flags: [MessageFlags.Ephemeral] });
+                }
+            }
+
             updates.destinyActivityTracking = {
                 ...currentConfig.destinyActivityTracking,
                 enabled
