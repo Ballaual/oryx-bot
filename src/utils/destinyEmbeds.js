@@ -137,28 +137,68 @@ async function buildFireteamLines(pgcr, mode, instanceId) {
     const entries = Array.isArray(pgcr?.entries) ? pgcr.entries : [];
     const isRaid = isRaidMode(mode);
     const isDungeon = isDungeonMode(mode);
-    const rows = [];
+
+    // Group entries by membershipId to handle character swaps
+    const playerMap = new Map();
 
     for (const e of entries) {
         const p = e?.player?.destinyUserInfo;
-        const name = p?.bungieGlobalDisplayName
-            ? `${p.bungieGlobalDisplayName}#${String(p.bungieGlobalDisplayNameCode).padStart(4, '0')}`
-            : (p?.displayName || 'Unknown');
-        const profileUrl = isRaid
-            ? raidhubProfileUrl(p?.membershipId)
-            : isDungeon
-                ? dungeonReportProfileUrl(p?.membershipType, p?.membershipId)
-                : null;
-        const fallbackUrl = !isRaid && !isDungeon ? raidHubPgcrUrl(instanceId) : null;
-        const linkUrl = profileUrl || fallbackUrl;
-        const linkedName = linkUrl ? `[${name}](${linkUrl})` : name;
+        const membershipId = p?.membershipId;
+        if (!membershipId) continue;
+
+        if (!playerMap.has(membershipId)) {
+            const name = p?.bungieGlobalDisplayName
+                ? `${p.bungieGlobalDisplayName}#${String(p.bungieGlobalDisplayNameCode).padStart(4, '0')}`
+                : (p?.displayName || 'Unknown');
+
+            const profileUrl = isRaid
+                ? raidhubProfileUrl(p?.membershipId)
+                : isDungeon
+                    ? dungeonReportProfileUrl(p?.membershipType, p?.membershipId)
+                    : null;
+
+            const fallbackUrl = !isRaid && !isDungeon ? raidHubPgcrUrl(instanceId) : null;
+            const linkUrl = profileUrl || fallbackUrl;
+
+            playerMap.set(membershipId, {
+                linkedName: linkUrl ? `[${name}](${linkUrl})` : name,
+                kills: 0,
+                assists: 0,
+                deaths: 0,
+                maxPower: 0,
+                classEmojis: new Set()
+            });
+        }
+
+        const data = playerMap.get(membershipId);
+        data.kills += Math.floor(Number(e?.values?.kills?.basic?.value ?? 0));
+        data.assists += Math.floor(Number(e?.values?.assists?.basic?.value ?? 0));
+        data.deaths += Math.floor(Number(e?.values?.deaths?.basic?.value ?? 0));
+
+        const power = Math.floor(Number(e?.player?.lightLevel ?? 0));
+        if (power > data.maxPower) data.maxPower = power;
+
         const classType = await resolveEntryClassType(e);
-        const clsEmoji = destinyClassEmoji(classType);
-        const kills = Math.floor(Number(e?.values?.kills?.basic?.value ?? 0));
-        const assists = Math.floor(Number(e?.values?.assists?.basic?.value ?? 0));
-        const deaths = Math.floor(Number(e?.values?.deaths?.basic?.value ?? 0));
-        rows.push({ clsEmoji, linkedName, kills, assists, deaths });
+        if (classType != null) {
+            data.classEmojis.add(destinyClassEmoji(classType));
+        }
     }
+
+    const rows = [...playerMap.values()].map(data => {
+        const kd = (data.kills / Math.max(1, data.deaths)).toFixed(2);
+        const powerText = data.maxPower > 0 ? ` (${data.maxPower})` : '';
+        const emojisText = [...data.classEmojis].join('');
+
+        return {
+            emojisText,
+            linkedName: data.linkedName,
+            powerText,
+            kills: data.kills,
+            assists: data.assists,
+            deaths: data.deaths,
+            kd
+        };
+    });
 
     rows.sort((a, b) => {
         if (b.kills !== a.kills) return b.kills - a.kills;
@@ -167,7 +207,10 @@ async function buildFireteamLines(pgcr, mode, instanceId) {
         return 0;
     });
 
-    return rows.map((r) => `• ${r.clsEmoji} ${r.linkedName} // ${r.kills} / ${r.assists} / ${r.deaths}`);
+    return rows.map((r) =>
+        `${r.emojisText} **${r.linkedName}**${r.powerText}\n` +
+        `╰ \` ⚔️ ${r.kills} \` • \` 🤝 ${r.assists} \` • \` 💀 ${r.deaths} \` • \` 📈 ${r.kd} \``
+    );
 }
 
 function getDurationFromPgcr(pgcr) {
@@ -181,6 +224,17 @@ function getDurationFromPgcr(pgcr) {
         if (Number.isFinite(played) && played > best) best = played;
     }
     return best;
+}
+
+function getSummaryStats(pgcr) {
+    const entries = Array.isArray(pgcr?.entries) ? pgcr.entries : [];
+    let totalKills = 0;
+    let totalDeaths = 0;
+    for (const e of entries) {
+        totalKills += Math.floor(Number(e?.values?.kills?.basic?.value ?? 0));
+        totalDeaths += Math.floor(Number(e?.values?.deaths?.basic?.value ?? 0));
+    }
+    return { totalKills, totalDeaths };
 }
 
 function analyzeRun(pgcr, mode) {
@@ -256,44 +310,67 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
     const started = pgcr?.period ? new Date(pgcr.period) : null;
     const durationSeconds = getDurationFromPgcr(pgcr);
     const run = analyzeRun(pgcr, mode);
+    const stats = getSummaryStats(pgcr);
     const ended = started ? new Date(started.getTime() + durationSeconds * 1000) : null;
-    const title = def?.name || (isRaid ? 'Raid abgeschlossen' : isDungeon ? 'Dungeon abgeschlossen' : 'Aktivität abgeschlossen');
-    const relativeLine = started ? `<t:${Math.floor(started.getTime() / 1000)}:R>` : null;
-    const relativeRangeLine =
-        started && ended
-            ? `<t:${Math.floor(started.getTime() / 1000)}:f> — <t:${Math.floor(ended.getTime() / 1000)}:f>`
-            : null;
-    const hintTags = [];
-    if (run.solo) hintTags.push('Solo');
-    if (run.duo) hintTags.push('Duo');
-    if (run.trio) hintTags.push('Trio');
-    if (run.teamFlawless) hintTags.push('Flawless');
-    const hintsText = hintTags.length ? hintTags.join(' ') : null;
-    const titleText = hintsText ? `${title}\n${hintsText}` : title;
+
+    const activityName = def?.name || (isRaid ? 'Raid' : isDungeon ? 'Dungeon' : 'Activity');
+    const typeLabel = isRaid ? 'Raid Completion' : isDungeon ? 'Dungeon Completion' : 'Activity Completion';
+
+    const badges = [];
+    if (run.isFullClear) badges.push('✅ Full');
+    else badges.push('🚩 Checkpoint');
+
+    if (run.solo) badges.push('👤 Solo');
+    if (run.duo) badges.push('👤👤 Duo');
+    if (run.trio) badges.push('👤👤👤 Trio');
+
+    if (run.teamFlawless) badges.push('✨ Flawless');
+
+    const featCount = pgcr?.activityDetails?.selectedSkullHashes?.length || 0;
+    if (featCount > 0) {
+        badges.push(`🏆 ${featCount} Feats`);
+    }
+
+    const activityUrl = isDungeon 
+        ? dungeonReportPgcrUrl(instanceId) 
+        : raidHubPgcrUrl(instanceId);
 
     const embed = new EmbedBuilder()
         .setColor(run.isCheckpointClear ? CHECKPOINT_CLEAR_COLOR : FULL_CLEAR_COLOR)
-        .setTitle(titleText)
-        .setDescription(
-            [
-                relativeLine,
-                relativeRangeLine,
-                '',
-                `**Duration:** ${formatDuration(durationSeconds)}`,
-                '',
-                '**__Fireteam__**',
-                '',
-                ...(await buildFireteamLines(pgcr, mode, instanceId)),
-            ]
-                // Keep intentional empty-string lines for visual spacing
-                .filter((line) => line != null)
-                .join('\n')
-        )
-        .setFooter({ text: 'Oryx Putzkolonne' });
+        .setTitle(activityName)
+        .setDescription(badges.length ? badges.map(b => `\`${b}\``).join(' ') : null)
+        .setURL(activityUrl)
+        .addFields(
+            { name: '📅 Time', value: started ? `<t:${Math.floor(started.getTime() / 1000)}:f>` : 'Unknown', inline: true },
+            { name: '⏱️ Duration', value: `\`${formatDuration(durationSeconds)}\``, inline: true }
+        );
 
-    if (started) {
-        embed.setTimestamp(started);
+    const fireteamLines = await buildFireteamLines(pgcr, mode, instanceId);
+    let currentFieldContent = '';
+    let fieldIndex = 1;
+
+    for (const line of fireteamLines) {
+        if ((currentFieldContent + line + '\n\n').length > 1024) {
+            embed.addFields({
+                name: '\u200B',
+                value: currentFieldContent.trim()
+            });
+            currentFieldContent = line + '\n\n';
+            fieldIndex++;
+        } else {
+            currentFieldContent += line + '\n\n';
+        }
     }
+
+    if (currentFieldContent) {
+        embed.addFields({
+            name: '\u200B',
+            value: currentFieldContent.trim()
+        });
+    }
+
+    embed.setFooter({ text: 'Oryx Putzkolonne', iconURL: client.user.displayAvatarURL() })
+        .setTimestamp();
 
     const files = [];
     if (isRaid) {
@@ -308,28 +385,33 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
         const thumbnailUrl = def?.icon || def?.pgcrImage || null;
         if (thumbnailUrl) embed.setThumbnail(thumbnailUrl);
     }
-    if (def?.pgcrImage) embed.setImage(def.pgcrImage);
+
+    if (def?.pgcrImage) {
+        embed.setImage(def.pgcrImage);
+    }
 
     const row = new ActionRowBuilder();
     if (isRaid) {
         row.addComponents(
-            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('View RaidHub').setURL(raidHubPgcrUrl(instanceId)),
-            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('View Raid Report').setURL(raidReportPgcrUrl(instanceId))
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('RaidHub').setURL(raidHubPgcrUrl(instanceId)),
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Raid Report').setURL(raidReportPgcrUrl(instanceId))
         );
     } else if (isDungeon) {
         row.addComponents(
             new ButtonBuilder()
                 .setStyle(ButtonStyle.Link)
-                .setLabel('View Dungeon Report')
+                .setLabel('Dungeon Report')
                 .setURL(dungeonReportPgcrUrl(instanceId))
         );
     } else {
         row.addComponents(
-            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('View RaidHub').setURL(raidHubPgcrUrl(instanceId))
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('RaidHub').setURL(raidHubPgcrUrl(instanceId))
         );
     }
 
-    await channel.send({ embeds: [embed], components: [row], files }).catch(() => null);
+    await channel.send({ embeds: [embed], components: [row], files }).catch(err => {
+        console.error('[DestinyEmbeds] Failed to send embed:', err);
+    });
 }
 
 module.exports = { postSummaryToDiscordForInteraction };
