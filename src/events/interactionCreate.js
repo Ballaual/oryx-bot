@@ -56,8 +56,8 @@ async function handleButton(interaction) {
         return interaction.showModal(modal);
     }
 
-    // --- SUPPORT ACTIONS (CLOSE/ADD) ---
-    if (action === 'close' || action === 'add') {
+    // --- SUPPORT ACTIONS (CLOSE/ADD/PAUSE) ---
+    if (action === 'close' || action === 'add' || action === 'pause') {
         if (!isSupportUser(member, guild.id)) {
             return interaction.reply({ content: 'Nur Moderatoren können diese Aktion ausführen.', flags: [MessageFlags.Ephemeral] });
         }
@@ -89,8 +89,37 @@ async function handleButton(interaction) {
                         console.error('[interactionCreate] Fehler beim Senden der Clan-Willkommensnachricht:', chatError);
                     }
                 }
-            } else {
-                await interaction.editReply('Ticket wird geschlossen und Rolle entfernt.');
+            } else if (action === 'close') {
+                let kickStatus = 'Rolle entfernt';
+                if (targetMember) {
+                    if (targetMember.kickable) {
+                        await targetMember.kick('Ticket durch Moderator geschlossen');
+                        kickStatus = 'User gekickt';
+                    } else {
+                        kickStatus = 'Rolle entfernt (User nicht kickbar)';
+                    }
+                }
+                await interaction.editReply(`${kickStatus} und Ticket wird geschlossen.`);
+            }
+
+            // --- PAUSE TRACKING ---
+            if (action === 'pause') {
+                const newState = db.toggleTicketPause(channel.id);
+                const isPaused = newState === 1;
+
+                // Update the message components
+                const { createOnboardingMessage } = require('../utils/embeds');
+                const onboardingData = createOnboardingMessage(targetMember || { id: targetUserId }, isPaused);
+
+                await interaction.editReply({
+                    content: isPaused
+                        ? `⏸️ Das Tracking für <@${targetUserId}> wurde **pausiert**.`
+                        : `▶️ Das Tracking für <@${targetUserId}> wurde **fortgesetzt**.`,
+                });
+
+                // Update original panel message if possible
+                await interaction.message.edit({ components: onboardingData.components }).catch(() => null);
+                return;
             }
 
             // Remove from DB and delete the ticket channel after a short delay

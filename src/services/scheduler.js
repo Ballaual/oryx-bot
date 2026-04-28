@@ -14,6 +14,11 @@ async function checkInactivity(client) {
 
     for (const ticketData of tickets) {
         try {
+            if (ticketData.is_paused) {
+                // Skip paused tickets
+                continue;
+            }
+
             const config = configService.get(ticketData.guild_id);
             if (!config.ticketSystem.enabled) continue;
 

@@ -3,9 +3,10 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
 /**
  * Creates the standard onboarding embed and button row for new members.
  * @param {import('discord.js').GuildMember} member The member joining the onboarding.
+ * @param {boolean} [isPaused=false] Whether the tracking is currently paused.
  * @returns {{embeds: EmbedBuilder[], components: ActionRowBuilder[]}}
  */
-function createOnboardingMessage(member) {
+function createOnboardingMessage(member, isPaused = false) {
     const embed = new EmbedBuilder()
         .setTitle('Bewerber Panel')
         .setDescription(`**Bitte beantworte uns vorab folgende Fragen:**\n\n1. Bist du im Besitz aller DLCs? (Falls nein, welche fehlen dir aktuell?)\n2. Wie sieht deine Aktivität aus? (Tage & Uhrzeiten)\n3. Planst du, das Spiel längerfristig zu spielen?\n4. Hast du bereits Raiderfahrung? (Wenn ja: Welche und wie viel?)\n5. Wie schätzt du dein aktuelles Gear ein und bist du bereit, stetig an dessen Verbesserung zu arbeiten?\n6. Was sind deine Ziele in Destiny? (Kurzfristig / Langfristig)\n\n**Aktionen:**\n1. Klicke auf den blauen Button unten, um deine Bungie ID anzugeben.\n2. Beantworte die Fragen hier im Chat.\n3. Unser Mod-Team wird sich schnellstmöglich hier bei Dir melden.`)
@@ -25,7 +26,12 @@ function createOnboardingMessage(member) {
             new ButtonBuilder()
                 .setCustomId(`add_clan_${member.id}`)
                 .setLabel('Als Clan-Mitglied aufnehmen')
-                .setStyle(ButtonStyle.Success)
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId(`pause_ticket_${member.id}`)
+                .setLabel(isPaused ? 'Tracking fortsetzen' : 'Tracking pausieren')
+                .setEmoji('🕒')
+                .setStyle(ButtonStyle.Secondary)
         );
 
     return { embeds: [embed], components: [row] };

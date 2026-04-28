@@ -19,9 +19,20 @@ db.exec(`
         guild_id TEXT NOT NULL,
         last_activity INTEGER NOT NULL,
         pinged_at INTEGER,
-        created_at INTEGER NOT NULL
+        created_at INTEGER NOT NULL,
+        is_paused INTEGER DEFAULT 0
     )
 `);
+
+// Migration: Add is_paused column if it doesn't exist (for existing databases)
+try {
+    const columns = db.pragma('table_info(tracked_tickets)');
+    if (!columns.some(c => c.name === 'is_paused')) {
+        db.exec('ALTER TABLE tracked_tickets ADD COLUMN is_paused INTEGER DEFAULT 0');
+    }
+} catch (err) {
+    console.warn('[DB] Migration for is_paused failed:', err.message);
+}
 
 db.exec(`
     CREATE TABLE IF NOT EXISTS destiny_profiles (
@@ -85,6 +96,19 @@ module.exports = {
 
     getTicketByUserId: (userId) => {
         return db.prepare('SELECT * FROM tracked_tickets WHERE user_id = ?').get(userId);
+    },
+
+    getTicket: (ticketChannelId) => {
+        return db.prepare('SELECT * FROM tracked_tickets WHERE ticket_channel_id = ?').get(ticketChannelId);
+    },
+
+    toggleTicketPause: (ticketChannelId) => {
+        const ticket = db.prepare('SELECT is_paused FROM tracked_tickets WHERE ticket_channel_id = ?').get(ticketChannelId);
+        if (!ticket) return null;
+
+        const newState = ticket.is_paused ? 0 : 1;
+        db.prepare('UPDATE tracked_tickets SET is_paused = ? WHERE ticket_channel_id = ?').run(newState, ticketChannelId);
+        return newState;
     },
 
     upsertDestinyProfileByBungieName: (discordUserId, displayName, displayNameCode) => {
