@@ -24,9 +24,16 @@ module.exports = {
             embed.setDescription(`${embed.data.description}\n${q}`);
         }
 
+        let footerText = interaction.guild.name;
         if (queue.songs.length > 11) {
-            embed.setFooter({ text: `...und ${queue.songs.length - 11} weitere Songs` });
+            footerText = `...und ${queue.songs.length - 11} weitere Songs | ${footerText}`;
         }
+
+        embed.setFooter({ 
+            text: footerText, 
+            iconURL: interaction.client.user.displayAvatarURL() 
+        })
+        .setTimestamp();
 
         await interaction.reply({ embeds: [embed] });
     },

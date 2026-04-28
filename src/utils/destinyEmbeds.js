@@ -369,7 +369,7 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
         });
     }
 
-    embed.setFooter({ text: 'Oryx Putzkolonne', iconURL: client.user.displayAvatarURL() })
+    embed.setFooter({ text: channel.guild.name, iconURL: client.user.displayAvatarURL() })
         .setTimestamp();
 
     const files = [];
