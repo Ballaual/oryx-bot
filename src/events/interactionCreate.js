@@ -113,8 +113,8 @@ async function handleButton(interaction) {
 
                 await interaction.editReply({
                     content: isPaused
-                        ? `⏸️ Das Tracking für <@${targetUserId}> wurde **pausiert**.`
-                        : `▶️ Das Tracking für <@${targetUserId}> wurde **fortgesetzt**.`,
+                        ? `⏸️ Die Nachverfolgung für Ticket <#${channel.id}> wurde **pausiert**.`
+                        : `▶️ Die Nachverfolgung für Ticket <#${channel.id}> wurde **fortgesetzt**.`
                 });
 
                 // Update original panel message if possible
