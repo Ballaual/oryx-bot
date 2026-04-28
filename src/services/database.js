@@ -43,6 +43,15 @@ db.exec(`
     )
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS clan_member_tracking (
+        membership_id TEXT,
+        guild_id TEXT,
+        first_seen_at INTEGER NOT NULL,
+        PRIMARY KEY (membership_id, guild_id)
+    )
+`);
+
 module.exports = {
     addTicket: (ticketChannelId, userId, guildId) => {
         const stmt = db.prepare('INSERT OR IGNORE INTO tracked_tickets (ticket_channel_id, user_id, guild_id, last_activity, created_at) VALUES (?, ?, ?, ?, ?)');
@@ -120,5 +129,15 @@ module.exports = {
         db.prepare(
             'INSERT OR IGNORE INTO destiny_posted_instances (instance_id, discord_user_id, activity_type, posted_at) VALUES (?, ?, ?, ?)'
         ).run(String(instanceId), discordUserId ? String(discordUserId) : null, activityType ? String(activityType) : null, Date.now());
+    },
+
+    isMemberKnown: (membershipId, guildId) => {
+        return Boolean(db.prepare('SELECT 1 FROM clan_member_tracking WHERE membership_id = ? AND guild_id = ?').get(String(membershipId), String(guildId)));
+    },
+
+    markMemberKnown: (membershipId, guildId) => {
+        db.prepare(
+            'INSERT OR IGNORE INTO clan_member_tracking (membership_id, guild_id, first_seen_at) VALUES (?, ?, ?)'
+        ).run(String(membershipId), String(guildId), Date.now());
     },
 };

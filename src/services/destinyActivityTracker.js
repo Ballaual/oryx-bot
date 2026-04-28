@@ -100,6 +100,11 @@ async function pollOnce(client) {
         const membershipId = m.membershipId;
         const membershipType = m.membershipType;
 
+        const isKnown = db.isMemberKnown(membershipId, guild.id);
+        if (!isKnown) {
+            db.markMemberKnown(membershipId, guild.id);
+        }
+
         let characterIds = [];
         try {
             characterIds = await getCharacterIds(membershipType, membershipId);
@@ -131,9 +136,9 @@ async function pollOnce(client) {
 
                     if (db.hasPostedInstance(instanceId)) continue;
 
-                    if (!warmupCompleted) {
-                        // On first pass after startup, only register already-finished activities
-                        // to avoid backfilling historical runs into Discord.
+                    if (!warmupCompleted || !isKnown) {
+                        // On first pass after startup OR when a new member is found,
+                        // only register already-finished activities to avoid backfilling historical runs.
                         db.markInstancePosted(instanceId, null, isRaidMode(mode) ? 'raid' : isDungeonMode(mode) ? 'dungeon' : 'activity');
                         continue;
                     }
