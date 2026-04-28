@@ -29,7 +29,6 @@ function createOnboardingMessage(member, isPaused = false) {
                 .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
                 .setCustomId(`pause_ticket_${member.id}`)
-                .setLabel(isPaused ? 'Tracking fortsetzen' : 'Tracking pausieren')
                 .setEmoji('🕒')
                 .setStyle(ButtonStyle.Secondary)
         );
