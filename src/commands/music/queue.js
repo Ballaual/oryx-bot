@@ -31,7 +31,7 @@ module.exports = {
 
         embed.setFooter({ 
             text: footerText, 
-            iconURL: interaction.client.user.displayAvatarURL() 
+            iconURL: interaction.guild.iconURL() 
         })
         .setTimestamp();
 

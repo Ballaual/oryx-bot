@@ -258,7 +258,7 @@ function initMusicService(client) {
                 { name: 'Angefordert von', value: `<@${song.user.id}>`, inline: true }
             )
             .setImage(song.thumbnail)
-            .setFooter({ text: queue.textChannel.guild.name, iconURL: queue.client.user.displayAvatarURL() })
+            .setFooter({ text: queue.textChannel.guild.name, iconURL: queue.textChannel.guild.iconURL() })
             .setTimestamp();
 
         queue.textChannel.send({ embeds: [embed] }).catch(err => console.error('[Music] Fehler beim Senden des playSong Embeds:', err));
@@ -270,7 +270,7 @@ function initMusicService(client) {
             .setTitle('🎵 Zur Warteschlange hinzugefügt')
             .setDescription(`**[${song.name}](${song.url})**\nAngefordert von: <@${song.user.id}>`)
             .setThumbnail(song.thumbnail)
-            .setFooter({ text: queue.textChannel.guild.name, iconURL: queue.client.user.displayAvatarURL() })
+            .setFooter({ text: queue.textChannel.guild.name, iconURL: queue.textChannel.guild.iconURL() })
             .setTimestamp();
 
         queue.textChannel.send({ embeds: [embed] }).catch(err => console.error('[Music] Fehler beim Senden des addSong Embeds:', err));
@@ -283,7 +283,7 @@ function initMusicService(client) {
             .setDescription(`**[${playlist.name}](${playlist.url})**\n${playlist.songs.length} Songs hinzugefügt.`)
             .addFields({ name: 'Angefordert von', value: `<@${playlist.user.id}>` })
             .setThumbnail(playlist.thumbnail)
-            .setFooter({ text: queue.textChannel.guild.name, iconURL: queue.client.user.displayAvatarURL() })
+            .setFooter({ text: queue.textChannel.guild.name, iconURL: queue.textChannel.guild.iconURL() })
             .setTimestamp();
 
         queue.textChannel.send({ embeds: [embed] }).catch(err => console.error('[Music] Fehler beim Senden des addList Embeds:', err));
