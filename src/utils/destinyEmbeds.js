@@ -369,7 +369,7 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
         });
     }
 
-    embed.setFooter({ text: channel.guild.name, iconURL: channel.guild.iconURL() })
+    embed.setFooter({ text: `${channel.guild.name} • PGCR ID: ${instanceId}`, iconURL: channel.guild.iconURL() })
         .setTimestamp();
 
     const files = [];
