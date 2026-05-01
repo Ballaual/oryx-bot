@@ -52,7 +52,11 @@ function modeAllowed(mode, modeFilter) {
 function analyzePgcrForFilters(pgcr) {
     const startingPhaseIndex = Number(pgcr?.startingPhaseIndex ?? 0);
     const isCheckpointClear = Number.isFinite(startingPhaseIndex) && startingPhaseIndex > 0;
-    return { isCheckpointClear };
+
+    // Check if any player has a victory standing (0). 1 means defeat/wipe.
+    const wasSuccess = Array.isArray(pgcr?.entries) && pgcr.entries.some(e => Number(e?.values?.standing?.basic?.value) === 0);
+
+    return { isCheckpointClear, wasSuccess };
 }
 
 async function shouldPostActivity(instanceId, mode, filters) {
@@ -63,6 +67,8 @@ async function shouldPostActivity(instanceId, mode, filters) {
 
     const run = analyzePgcrForFilters(pgcr);
     if (!filters.allowCheckpointClears && run.isCheckpointClear) return false;
+    if (!run.wasSuccess) return false;
+
     return true;
 }
 

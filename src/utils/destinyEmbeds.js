@@ -3,6 +3,7 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBu
 const { bungieFetch } = require('../services/destinyApi');
 const FULL_CLEAR_COLOR = 0x05df72; // #05DF72
 const CHECKPOINT_CLEAR_COLOR = 0xec4899; // pink
+const FAILED_COLOR = 0xef4444; // red
 
 function destinyClassEmoji(classType) {
     const cls = Number(classType);
@@ -272,16 +273,18 @@ function analyzeRun(pgcr, mode) {
         pgcr?.activityDetails?.activityWasStartedFromBeginning,
     ];
     const startedFromBeginning = startFromBeginningCandidates.find((v) => typeof v === 'boolean');
+    const wasSuccess = Array.isArray(pgcr?.entries) && pgcr.entries.some(e => Number(e?.values?.standing?.basic?.value) === 0);
     const isCheckpointFromPhase = startingPhaseIndex > 0;
     const isCheckpointFromBoolean = startedFromBeginning === false;
-    const isCheckpointClear = isCheckpointFromPhase || isCheckpointFromBoolean;
-    const isFullClear = !isCheckpointClear;
+    const isCheckpointClear = wasSuccess && (isCheckpointFromPhase || isCheckpointFromBoolean);
+    const isFullClear = wasSuccess && !isCheckpointClear;
     const isRaid = isRaidMode(mode);
     const isDungeon = isDungeonMode(mode);
 
     return {
         isFullClear,
         isCheckpointClear,
+        wasSuccess,
         teamFlawless: allFlawless,
         solo: isDungeon && teamSize === 1,
         trio: isRaid && teamSize === 3,
@@ -317,14 +320,18 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
     const typeLabel = isRaid ? 'Raid Completion' : isDungeon ? 'Dungeon Completion' : 'Activity Completion';
 
     const badges = [];
-    if (run.isFullClear) badges.push('✅ Full');
-    else badges.push('🚩 Checkpoint');
+    if (run.wasSuccess) {
+        if (run.isFullClear) badges.push('✅ Full');
+        else badges.push('🚩 Checkpoint');
+    } else {
+        badges.push('❌ Wipe');
+    }
 
-    if (run.solo) badges.push('👤 Solo');
-    if (run.duo) badges.push('👤👤 Duo');
-    if (run.trio) badges.push('👤👤👤 Trio');
+    if (run.wasSuccess && run.solo) badges.push('👤 Solo');
+    if (run.wasSuccess && run.duo) badges.push('👤👤 Duo');
+    if (run.wasSuccess && run.trio) badges.push('👤👤👤 Trio');
 
-    if (run.teamFlawless) badges.push('✨ Flawless');
+    if (run.wasSuccess && run.teamFlawless) badges.push('✨ Flawless');
 
     const featCount = pgcr?.activityDetails?.selectedSkullHashes?.length || 0;
     if (featCount > 0) {
@@ -336,7 +343,7 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
         : raidHubPgcrUrl(instanceId);
 
     const embed = new EmbedBuilder()
-        .setColor(run.isCheckpointClear ? CHECKPOINT_CLEAR_COLOR : FULL_CLEAR_COLOR)
+        .setColor(!run.wasSuccess ? FAILED_COLOR : (run.isCheckpointClear ? CHECKPOINT_CLEAR_COLOR : FULL_CLEAR_COLOR))
         .setTitle(activityName)
         .setDescription(badges.length ? badges.map(b => `\`${b}\``).join(' ') : null)
         .setURL(activityUrl)
