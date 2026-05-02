@@ -53,15 +53,14 @@ function analyzePgcrForFilters(pgcr) {
     const startingPhaseIndex = Number(pgcr?.startingPhaseIndex ?? 0);
     const isCheckpointClear = Number.isFinite(startingPhaseIndex) && startingPhaseIndex > 0;
 
-    // completionReason: 0 is ObjectiveComplete (Success)
-    const completionReason = pgcr?.activityDetails?.completionReason;
-    const isSuccessFromReason = completionReason === 0;
+    const entries = Array.isArray(pgcr?.entries) ? pgcr.entries : [];
 
-    // Check if any player has a victory standing (0). 1 means defeat/wipe.
-    const isSuccessFromStanding = Array.isArray(pgcr?.entries) && pgcr.entries.some(e => Number(e?.values?.standing?.basic?.value) === 0);
+    // In PvE, standing: 0 is often present even in wipes.
+    // We must check if any player has 'completed: 1' OR 'completionReason: 0' (Objective Completed).
+    const hasAnyCompleted = entries.some(e => Number(e?.values?.completed?.basic?.value) === 1);
+    const hasAnyReasonSuccess = entries.some(e => Number(e?.values?.completionReason?.basic?.value) === 0);
 
-    // Some PvE activities might not have standing, but completionReason is usually reliable for Raids/Dungeons.
-    const wasSuccess = isSuccessFromReason || isSuccessFromStanding;
+    const wasSuccess = hasAnyCompleted || hasAnyReasonSuccess;
 
     return { isCheckpointClear, wasSuccess };
 }
