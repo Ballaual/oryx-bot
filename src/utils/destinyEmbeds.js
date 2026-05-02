@@ -273,7 +273,17 @@ function analyzeRun(pgcr, mode) {
         pgcr?.activityDetails?.activityWasStartedFromBeginning,
     ];
     const startedFromBeginning = startFromBeginningCandidates.find((v) => typeof v === 'boolean');
-    const wasSuccess = Array.isArray(pgcr?.entries) && pgcr.entries.some(e => Number(e?.values?.standing?.basic?.value) === 0);
+
+    // completionReason: 0 is ObjectiveComplete (Success)
+    const completionReason = pgcr?.activityDetails?.completionReason;
+    const isSuccessFromReason = completionReason === 0;
+
+    // Check if any player has a victory standing (0). 1 means defeat/wipe.
+    const isSuccessFromStanding = Array.isArray(pgcr?.entries) && pgcr.entries.some(e => Number(e?.values?.standing?.basic?.value) === 0);
+
+    // Some PvE activities might not have standing, but completionReason is usually reliable for Raids/Dungeons.
+    const wasSuccess = isSuccessFromReason || isSuccessFromStanding;
+
     const isCheckpointFromPhase = startingPhaseIndex > 0;
     const isCheckpointFromBoolean = startedFromBeginning === false;
     const isCheckpointClear = wasSuccess && (isCheckpointFromPhase || isCheckpointFromBoolean);

@@ -132,14 +132,8 @@ async function getPgcr(instanceId) {
 }
 
 function isCompletedFromActivityHistory(a) {
-    const completed = a?.values?.completed?.basic?.value;
-    const standing = a?.values?.standing?.basic?.value;
-
-    // standing: 0 means Victory, 1 means Defeat.
-    // If standing is present (raids/dungeons usually have it), it must be 0.
-    if (standing !== undefined && Number(standing) !== 0) return false;
-
-    return Number(completed) === 1;
+    const v = a?.values?.completed?.basic?.value;
+    return Number(v) === 1;
 }
 
 function getActivityInstanceId(a) {
