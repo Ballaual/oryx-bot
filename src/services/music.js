@@ -2,6 +2,7 @@ const { DisTube, Song, DisTubeError, Playlist } = require('distube');
 const { YtDlpPlugin, json: ytDlpJson } = require('@distube/yt-dlp');
 const { YouTubePlugin } = require('@distube/youtube');
 const { SpotifyPlugin } = require('@distube/spotify');
+const { FilePlugin } = require('@distube/file');
 const { EmbedBuilder, MessageFlags } = require('discord.js');
 const configService = require('./configService');
 
@@ -209,6 +210,7 @@ function initMusicService(client) {
 
     plugins.push(new SpotifyPlugin(spotifyOptions));
     plugins.push(youTubePlugin);
+    plugins.push(new FilePlugin());
     // YtDlpPlugin should be last plugin (recommended by plugin docs)
     plugins.push(ytDlpPlugin);
 
