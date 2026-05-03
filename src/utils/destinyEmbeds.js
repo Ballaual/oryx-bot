@@ -34,6 +34,10 @@ function dungeonReportPgcrUrl(instanceId) {
     return `https://dungeon.report/pgcr/${instanceId}`;
 }
 
+function oryxPutzkolonnePgcrUrl(instanceId) {
+    return `https://oryx-putzkolonne.vercel.app/pgcr/${instanceId}`;
+}
+
 function reportPlatformFromMembershipType(membershipType) {
     const t = Number(membershipType);
     if (t === 1) return 'xb';
@@ -407,11 +411,13 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
     const row = new ActionRowBuilder();
     if (isRaid) {
         row.addComponents(
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Oryx-Putzkolonne').setURL(oryxPutzkolonnePgcrUrl(instanceId)),
             new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('RaidHub').setURL(raidHubPgcrUrl(instanceId)),
             new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Raid Report').setURL(raidReportPgcrUrl(instanceId))
         );
     } else if (isDungeon) {
         row.addComponents(
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Oryx-Putzkolonne').setURL(oryxPutzkolonnePgcrUrl(instanceId)),
             new ButtonBuilder()
                 .setStyle(ButtonStyle.Link)
                 .setLabel('Dungeon Report')
@@ -419,6 +425,7 @@ async function postSummaryToDiscordForInteraction(client, { channelId, instanceI
         );
     } else {
         row.addComponents(
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Oryx-Putzkolonne').setURL(oryxPutzkolonnePgcrUrl(instanceId)),
             new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('RaidHub').setURL(raidHubPgcrUrl(instanceId))
         );
     }
