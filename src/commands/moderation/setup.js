@@ -6,62 +6,57 @@ module.exports = {
         .setName('setup')
         .setDescription('Server-spezifische Konfiguration für den Bot')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        // --- TICKETS ---
         .addSubcommand(sub =>
-            sub.setName('channels')
-                .setDescription('Konfiguriere wichtige Text/Voice-Kanäle')
-                .addBooleanOption(opt => opt.setName('enabled').setDescription('Ticketsystem aktivieren?').setRequired(false))
-                .addChannelOption(opt => opt.setName('rules').setDescription('Regelwerk-Kanal').setRequired(false))
-                .addChannelOption(opt => opt.setName('clan_chat').setDescription('Clan-Chat Kanal für Willkommensnachrichten').setRequired(false))
-                .addChannelOption(opt => opt.setName('music').setDescription('Voice-Kanal für den Musik-Bot (optional)').setRequired(false))
-                .addChannelOption(opt => opt.setName('ticket_category').setDescription('Kategorie für neue Bewerber-Tickets').setRequired(false))
+            sub.setName('tickets')
+                .setDescription('Konfiguriere das Ticket-System')
+                .addBooleanOption(opt => opt.setName('enabled').setDescription('Ticketsystem aktivieren?'))
+                .addChannelOption(opt => opt.setName('category').setDescription('Kategorie für neue Bewerber-Tickets'))
+                .addChannelOption(opt => opt.setName('rules_channel').setDescription('Kanal mit dem Regelwerk'))
+                .addChannelOption(opt => opt.setName('clan_chat').setDescription('Clan-Chat Kanal (für Begrüßungen)'))
+                .addRoleOption(opt => opt.setName('bewerber_role').setDescription('Bewerber-Rolle (triggert Ticketerstellung)'))
+                .addRoleOption(opt => opt.setName('clan_role').setDescription('Clan-Mitglied Rolle'))
+                .addStringOption(opt => opt.setName('support_pings').setDescription('Rollen-IDs für Ticket-Pings (kommagetrennt)'))
+                .addStringOption(opt => opt.setName('welcome_msg').setDescription('Willkommensnachricht im Ticket'))
+                .addStringOption(opt => opt.setName('clan_msg').setDescription('Nachricht bei Clan-Aufnahme'))
+                .addStringOption(opt => opt.setName('inactivity_msg').setDescription('Ping-Nachricht bei Inaktivität'))
+                .addStringOption(opt => opt.setName('kick_reason').setDescription('Kick-Grund wegen Inaktivität'))
+                .addIntegerOption(opt => opt.setName('ping_hours').setDescription('Ping nach X Stunden Inaktivität'))
+                .addIntegerOption(opt => opt.setName('kick_hours').setDescription('Kick nach X Stunden Inaktivität'))
         )
-        .addSubcommand(sub =>
-            sub.setName('roles')
-                .setDescription('Konfiguriere Rollen und Pings')
-                .addRoleOption(opt => opt.setName('bewerber').setDescription('Bewerber-Rolle (triggert die Ticketerstellung)').setRequired(false))
-                .addRoleOption(opt => opt.setName('clan_member').setDescription('Clan-Mitglied Rolle (nach Aufnahme)').setRequired(false))
-                .addStringOption(opt => opt.setName('support_pings').setDescription('Kommagetrennte Rollen-IDs für Ticket-Benachrichtigungen').setRequired(false))
-        )
+        // --- DESTINY 2 ---
         .addSubcommand(sub =>
             sub.setName('destiny')
                 .setDescription('Destiny 2 Activity Tracker konfigurieren')
                 .addBooleanOption(opt => opt.setName('enabled').setDescription('Tracker aktivieren?').setRequired(true))
-                .addStringOption(opt => opt.setName('clan_url').setDescription('Bungie.net Clan URL').setRequired(false))
-                .addChannelOption(opt => opt.setName('post_channel').setDescription('Kanal für Activity Posts').setRequired(false))
-                .addIntegerOption(opt => opt.setName('poll_interval').setDescription('Abfrage-Intervall in Minuten (Standard: 3)').setRequired(false))
+                .addStringOption(opt => opt.setName('clan_url').setDescription('Bungie.net Clan URL'))
+                .addChannelOption(opt => opt.setName('post_channel').setDescription('Kanal für Activity Posts'))
+                .addIntegerOption(opt => opt.setName('poll_interval').setDescription('Abfrage-Intervall in Minuten (Standard: 3)'))
                 .addStringOption(opt => opt.setName('mode')
                     .setDescription('Aktivitäts-Modus')
-                    .setRequired(false)
                     .addChoices(
                         { name: 'Raid', value: 'Raid' },
                         { name: 'Dungeon', value: 'Dungeon' },
                         { name: 'Beides', value: 'Both' }
                     )
                 )
-                .addBooleanOption(opt => opt.setName('allow_checkpoint_clears').setDescription('Checkpoint Clears erlauben?').setRequired(false))
+                .addBooleanOption(opt => opt.setName('allow_checkpoints').setDescription('Checkpoint Clears erlauben?'))
         )
-        .addSubcommand(sub =>
-            sub.setName('messages')
-                .setDescription('Konfiguriere Bot-Nachrichten')
-                .addStringOption(opt => opt.setName('welcome').setDescription('Willkommensnachricht im Ticket').setRequired(false))
-                .addStringOption(opt => opt.setName('clan_chat').setDescription('Nachricht bei Clan-Aufnahme').setRequired(false))
-                .addStringOption(opt => opt.setName('inactivity').setDescription('Ping-Nachricht bei Inaktivität').setRequired(false))
-                .addStringOption(opt => opt.setName('kick_reason').setDescription('Kick-Grund wegen Inaktivität').setRequired(false))
-        )
-        .addSubcommand(sub =>
-            sub.setName('timeouts')
-                .setDescription('Konfiguriere Ticket-Timeouts (in Stunden/Minuten)')
-                .addIntegerOption(opt => opt.setName('check_interval').setDescription('Check-Intervall in Minuten').setRequired(false))
-                .addIntegerOption(opt => opt.setName('ping_threshold').setDescription('Ping-Schwelle in Stunden').setRequired(false))
-                .addIntegerOption(opt => opt.setName('kick_threshold').setDescription('Kick-Schwelle in Stunden').setRequired(false))
-        )
+        // --- WELCOMER ---
         .addSubcommand(sub =>
             sub.setName('welcomer')
                 .setDescription('Konfiguriere den Welcomer (Join/Leave Nachrichten)')
-                .addBooleanOption(opt => opt.setName('enabled').setDescription('Welcomer aktivieren?').setRequired(false))
-                .addChannelOption(opt => opt.setName('channel').setDescription('Kanal für Join/Leave Nachrichten').setRequired(false))
-                .addStringOption(opt => opt.setName('welcome_msg').setDescription('Nachricht bei Join (Platzhalter: {user})').setRequired(false))
-                .addStringOption(opt => opt.setName('leave_msg').setDescription('Nachricht bei Leave (Platzhalter: {user})').setRequired(false))
+                .addBooleanOption(opt => opt.setName('enabled').setDescription('Welcomer aktivieren?'))
+                .addChannelOption(opt => opt.setName('channel').setDescription('Kanal für Join/Leave Nachrichten'))
+                .addStringOption(opt => opt.setName('join_msg').setDescription('Nachricht bei Join (Platzhalter: {user})'))
+                .addStringOption(opt => opt.setName('leave_msg').setDescription('Nachricht bei Leave (Platzhalter: {user})'))
+        )
+        // --- MUSIC ---
+        .addSubcommand(sub =>
+            sub.setName('music')
+                .setDescription('Konfiguriere das Musik-System')
+                .addBooleanOption(opt => opt.setName('enabled').setDescription('Musik-System aktivieren?'))
+                .addChannelOption(opt => opt.setName('channel').setDescription('Erzwinge Musik-Bot in diesem Voice-Kanal'))
         ),
 
     async execute(interaction) {
@@ -74,35 +69,37 @@ module.exports = {
         const currentConfig = configService.get(guildId);
         const updates = {};
 
-        if (subcommand === 'channels') {
+        if (subcommand === 'tickets') {
             const enabled = interaction.options.getBoolean('enabled');
-            const rules = interaction.options.getChannel('rules');
+            const category = interaction.options.getChannel('category');
+            const rules = interaction.options.getChannel('rules_channel');
             const clanChat = interaction.options.getChannel('clan_chat');
-            const music = interaction.options.getChannel('music');
-            const ticketCat = interaction.options.getChannel('ticket_category');
-
-            if (enabled !== null || ticketCat || rules || clanChat) {
-                updates.ticketSystem = updates.ticketSystem || {};
-                if (enabled !== null) updates.ticketSystem.enabled = enabled;
-                if (ticketCat) updates.ticketSystem.categoryId = ticketCat.id;
-                if (rules) updates.ticketSystem.rulesChannelId = rules.id;
-                if (clanChat) updates.ticketSystem.clanChatId = clanChat.id;
-            }
-            if (music) updates.musicChannelId = music.id;
-
-        } else if (subcommand === 'roles') {
-            const bewerber = interaction.options.getRole('bewerber');
-            const clanMember = interaction.options.getRole('clan_member');
+            const bewerberRole = interaction.options.getRole('bewerber_role');
+            const clanRole = interaction.options.getRole('clan_role');
             const supportPings = interaction.options.getString('support_pings');
+            const welcomeMsg = interaction.options.getString('welcome_msg');
+            const clanMsg = interaction.options.getString('clan_msg');
+            const inactivityMsg = interaction.options.getString('inactivity_msg');
+            const kickReason = interaction.options.getString('kick_reason');
+            const pingHours = interaction.options.getInteger('ping_hours');
+            const kickHours = interaction.options.getInteger('kick_hours');
 
-            if (bewerber || supportPings || clanMember) {
-                updates.ticketSystem = updates.ticketSystem || {};
-                if (bewerber) updates.ticketSystem.bewerberRoleId = bewerber.id;
-                if (clanMember) updates.ticketSystem.clanMemberRoleId = clanMember.id;
-                if (supportPings) {
-                    updates.ticketSystem.supportPingIds = supportPings.split(',').map(s => s.trim()).filter(s => s.length > 0);
-                }
+            updates.ticketSystem = {};
+            if (enabled !== null) updates.ticketSystem.enabled = enabled;
+            if (category) updates.ticketSystem.categoryId = category.id;
+            if (rules) updates.ticketSystem.rulesChannelId = rules.id;
+            if (clanChat) updates.ticketSystem.clanChatId = clanChat.id;
+            if (bewerberRole) updates.ticketSystem.bewerberRoleId = bewerberRole.id;
+            if (clanRole) updates.ticketSystem.clanMemberRoleId = clanRole.id;
+            if (supportPings !== null) {
+                updates.ticketSystem.supportPingIds = supportPings.split(',').map(s => s.trim()).filter(s => s.length > 0);
             }
+            if (welcomeMsg !== null) updates.ticketSystem.welcomeMessage = welcomeMsg;
+            if (clanMsg !== null) updates.ticketSystem.clanChatMessage = clanMsg;
+            if (inactivityMsg !== null) updates.ticketSystem.inactivityPingMessage = inactivityMsg;
+            if (kickReason !== null) updates.ticketSystem.kickReason = kickReason;
+            if (pingHours !== null) updates.ticketSystem.pingThresholdHours = pingHours;
+            if (kickHours !== null) updates.ticketSystem.kickThresholdHours = kickHours;
 
         } else if (subcommand === 'destiny') {
             const enabled = interaction.options.getBoolean('enabled');
@@ -110,7 +107,7 @@ module.exports = {
             const postChannel = interaction.options.getChannel('post_channel');
             const pollInterval = interaction.options.getInteger('poll_interval');
             const mode = interaction.options.getString('mode');
-            const allowCheckpointClears = interaction.options.getBoolean('allow_checkpoint_clears');
+            const allowCheckpoints = interaction.options.getBoolean('allow_checkpoints');
 
             const finalClanUrl = clanUrl !== null ? clanUrl : currentConfig.destinyActivityTracking.clanUrl;
             const finalPostChannelId = postChannel !== null ? postChannel.id : currentConfig.destinyActivityTracking.postChannelId;
@@ -125,54 +122,32 @@ module.exports = {
                 }
             }
 
-            updates.destinyActivityTracking = {
-                ...currentConfig.destinyActivityTracking,
-                enabled
-            };
-
+            updates.destinyActivityTracking = { enabled };
             if (clanUrl !== null) updates.destinyActivityTracking.clanUrl = clanUrl;
             if (postChannel !== null) updates.destinyActivityTracking.postChannelId = postChannel.id;
             if (pollInterval !== null) updates.destinyActivityTracking.pollIntervalMinutes = pollInterval;
             if (mode !== null) updates.destinyActivityTracking.mode = mode === 'Both' ? '' : mode;
-            if (allowCheckpointClears !== null) updates.destinyActivityTracking.allowCheckpointClears = allowCheckpointClears;
-        } else if (subcommand === 'messages') {
-            const welcome = interaction.options.getString('welcome');
-            const clanChat = interaction.options.getString('clan_chat');
-            const inactivity = interaction.options.getString('inactivity');
-            const kickReason = interaction.options.getString('kick_reason');
+            if (allowCheckpoints !== null) updates.destinyActivityTracking.allowCheckpointClears = allowCheckpoints;
 
-            if (welcome !== null || inactivity !== null || kickReason !== null || clanChat !== null) {
-                updates.ticketSystem = updates.ticketSystem || {};
-                if (welcome !== null) updates.ticketSystem.welcomeMessage = welcome;
-                if (inactivity !== null) updates.ticketSystem.inactivityPingMessage = inactivity;
-                if (kickReason !== null) updates.ticketSystem.kickReason = kickReason;
-                if (clanChat !== null) updates.ticketSystem.clanChatMessage = clanChat;
-            }
-
-        } else if (subcommand === 'timeouts') {
-            const checkInterval = interaction.options.getInteger('check_interval');
-            const pingThreshold = interaction.options.getInteger('ping_threshold');
-            const kickThreshold = interaction.options.getInteger('kick_threshold');
-
-            if (checkInterval !== null || pingThreshold !== null || kickThreshold !== null) {
-                updates.ticketSystem = updates.ticketSystem || {};
-                if (checkInterval !== null) updates.ticketSystem.checkIntervalMinutes = checkInterval;
-                if (pingThreshold !== null) updates.ticketSystem.pingThresholdHours = pingThreshold;
-                if (kickThreshold !== null) updates.ticketSystem.kickThresholdHours = kickThreshold;
-            }
         } else if (subcommand === 'welcomer') {
             const enabled = interaction.options.getBoolean('enabled');
             const channel = interaction.options.getChannel('channel');
-            const welcomeMsg = interaction.options.getString('welcome_msg');
+            const joinMsg = interaction.options.getString('join_msg');
             const leaveMsg = interaction.options.getString('leave_msg');
 
-            if (enabled !== null || channel || welcomeMsg || leaveMsg) {
-                updates.welcomer = {};
-                if (enabled !== null) updates.welcomer.enabled = enabled;
-                if (channel) updates.welcomer.channelId = channel.id;
-                if (welcomeMsg !== null) updates.welcomer.welcomeMessage = welcomeMsg;
-                if (leaveMsg !== null) updates.welcomer.leaveMessage = leaveMsg;
-            }
+            updates.welcomer = {};
+            if (enabled !== null) updates.welcomer.enabled = enabled;
+            if (channel) updates.welcomer.channelId = channel.id;
+            if (joinMsg !== null) updates.welcomer.welcomeMessage = joinMsg;
+            if (leaveMsg !== null) updates.welcomer.leaveMessage = leaveMsg;
+
+        } else if (subcommand === 'music') {
+            const enabled = interaction.options.getBoolean('enabled');
+            const channel = interaction.options.getChannel('channel');
+
+            updates.music = {};
+            if (enabled !== null) updates.music.enabled = enabled;
+            if (channel) updates.music.channelId = channel.id;
         }
 
         if (Object.keys(updates).length > 0) {

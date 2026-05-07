@@ -336,13 +336,18 @@ function checkMusicPermissions(interaction) {
     const voiceChannel = member.voice.channel;
     const config = configService.get(guild.id);
 
+    if (config.music?.enabled === false) {
+        interaction.reply({ content: '❌ Das Musik-System ist auf diesem Server deaktiviert.', flags: [MessageFlags.Ephemeral] });
+        return false;
+    }
+
     if (!voiceChannel) {
         interaction.reply({ content: '❌ Du musst in einem Voice-Kanal sein, um Musik abspielen zu können!', flags: [MessageFlags.Ephemeral] });
         return false;
     }
 
-    if (config.musicChannelId && voiceChannel.id !== config.musicChannelId) {
-        interaction.reply({ content: `❌ Musik kann nur im Kanal <#${config.musicChannelId}> abgespielt werden!`, flags: [MessageFlags.Ephemeral] });
+    if (config.music?.channelId && voiceChannel.id !== config.music.channelId) {
+        interaction.reply({ content: `❌ Musik kann nur im Kanal <#${config.music.channelId}> abgespielt werden!`, flags: [MessageFlags.Ephemeral] });
         return false;
     }
 

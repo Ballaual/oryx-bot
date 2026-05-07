@@ -37,7 +37,10 @@ const DEFAULT_CONFIG = {
         welcomeMessage: "Herzlich willkommen auf dem Server, {user}! 🎉",
         leaveMessage: "{user} hat den Server verlassen. 👋",
     },
-    musicChannelId: "",
+    music: {
+        enabled: true, // Standardmäßig aktiv, falls gewünscht
+        channelId: "",
+    },
 };
 
 function getGuildConfigPath(guildId) {
@@ -52,7 +55,7 @@ function loadConfig(guildId) {
             const data = JSON.parse(fileData);
 
             // Migration logic: Map old flat keys to new nested structure
-            if (data.ticketSystem === undefined || data.rulesChannelId !== undefined) {
+            if (data.ticketSystem === undefined || data.rulesChannelId !== undefined || data.musicChannelId !== undefined) {
                 const old = data.ticketSystem || {};
                 data.ticketSystem = {
                     enabled: old.enabled ?? data.ticketsEnabled ?? DEFAULT_CONFIG.ticketSystem.enabled,
@@ -65,26 +68,38 @@ function loadConfig(guildId) {
                     checkIntervalMinutes: old.checkIntervalMinutes ?? data.checkIntervalMinutes ?? DEFAULT_CONFIG.ticketSystem.checkIntervalMinutes,
                     pingThresholdHours: old.pingThresholdHours ?? data.pingThresholdHours ?? DEFAULT_CONFIG.ticketSystem.pingThresholdHours,
                     kickThresholdHours: old.kickThresholdHours ?? data.kickThresholdHours ?? DEFAULT_CONFIG.ticketSystem.kickThresholdHours,
-                    // New fields to migrate
                     rulesChannelId: data.rulesChannelId ?? DEFAULT_CONFIG.ticketSystem.rulesChannelId,
                     clanMemberRoleId: data.clanMemberRoleId ?? DEFAULT_CONFIG.ticketSystem.clanMemberRoleId,
                     clanChatId: data.clanChatId ?? DEFAULT_CONFIG.ticketSystem.clanChatId,
                     clanChatMessage: data.clanChatMessage ?? DEFAULT_CONFIG.ticketSystem.clanChatMessage,
                 };
 
-                // Set top-level musicChannelId from old config or default
-                data.musicChannelId = data.musicChannelId ?? DEFAULT_CONFIG.musicChannelId;
+                // Migrate musicChannelId to music object
+                if (data.music === undefined) {
+                    data.music = {
+                        enabled: DEFAULT_CONFIG.music.enabled,
+                        channelId: data.musicChannelId ?? DEFAULT_CONFIG.music.channelId
+                    };
+                }
 
                 // Remove old keys to keep it clean
                 [
                     'ticketsEnabled', 'ticketCategoryId', 'bewerberRoleId', 'supportPingIds',
                     'welcomeMessage', 'inactivityPingMessage', 'kickReason',
                     'checkIntervalMinutes', 'pingThresholdHours', 'kickThresholdHours',
-                    'rulesChannelId', 'clanMemberRoleId', 'clanChatId', 'clanChatMessage'
+                    'rulesChannelId', 'clanMemberRoleId', 'clanChatId', 'clanChatMessage',
+                    'musicChannelId'
                 ].forEach(key => delete data[key]);
             }
 
-            return { ...DEFAULT_CONFIG, ...data, ticketSystem: { ...DEFAULT_CONFIG.ticketSystem, ...data.ticketSystem } };
+            return { 
+                ...DEFAULT_CONFIG, 
+                ...data, 
+                ticketSystem: { ...DEFAULT_CONFIG.ticketSystem, ...data.ticketSystem },
+                destinyActivityTracking: { ...DEFAULT_CONFIG.destinyActivityTracking, ...data.destinyActivityTracking },
+                welcomer: { ...DEFAULT_CONFIG.welcomer, ...data.welcomer },
+                music: { ...DEFAULT_CONFIG.music, ...data.music }
+            };
         } catch (error) {
             console.error(`[ConfigService] Error reading config for guild ${guildId}:`, error);
         }
@@ -135,6 +150,13 @@ function set(guildId, updates) {
         newConfig.welcomer = {
             ...current.welcomer,
             ...updates.welcomer
+        };
+    }
+
+    if (updates.music) {
+        newConfig.music = {
+            ...current.music,
+            ...updates.music
         };
     }
 

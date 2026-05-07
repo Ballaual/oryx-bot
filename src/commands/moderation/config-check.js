@@ -37,8 +37,10 @@ module.exports = {
             ['ticketSystem.categoryId', config.ticketSystem.categoryId],
             ['ticketSystem.rulesChannelId', config.ticketSystem.rulesChannelId],
             ['ticketSystem.clanChatId', config.ticketSystem.clanChatId],
-            ['musicChannelId', config.musicChannelId],
+            ['music.channelId', config.music?.channelId],
         ];
+
+        pushResult(true, 'music.enabled', String(config.music?.enabled));
         for (const [key, id] of channelIds) {
             if (!id) {
                 pushResult(true, key, 'leer/optional');
