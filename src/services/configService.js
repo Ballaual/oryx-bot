@@ -38,7 +38,7 @@ const DEFAULT_CONFIG = {
         leaveMessage: "{user} hat den Server verlassen. 👋",
     },
     music: {
-        enabled: true, // Standardmäßig aktiv, falls gewünscht
+        enabled: false,
         channelId: "",
     },
 };
@@ -92,9 +92,9 @@ function loadConfig(guildId) {
                 ].forEach(key => delete data[key]);
             }
 
-            return { 
-                ...DEFAULT_CONFIG, 
-                ...data, 
+            return {
+                ...DEFAULT_CONFIG,
+                ...data,
                 ticketSystem: { ...DEFAULT_CONFIG.ticketSystem, ...data.ticketSystem },
                 destinyActivityTracking: { ...DEFAULT_CONFIG.destinyActivityTracking, ...data.destinyActivityTracking },
                 welcomer: { ...DEFAULT_CONFIG.welcomer, ...data.welcomer },
