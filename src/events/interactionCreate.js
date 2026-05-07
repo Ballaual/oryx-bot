@@ -73,7 +73,7 @@ async function handleButton(interaction) {
 
             if (action === 'add' && type === 'clan' && targetMember) {
                 await targetMember.roles.add(config.ticketSystem.clanMemberRoleId, 'Befördert zum Clan-Mitglied');
-                await interaction.editReply(`Benutzer <@${targetUserId}> wurde aufgenommen und das Ticket wird geschlossen.`);
+                await interaction.editReply(`Benutzer <@${targetUserId}> wurde aufgenommen. Dieser Kanal wird in 24 Stunden automatisch gelöscht.`);
 
                 // Send welcome message to clan chat if configured
                 if (config.ticketSystem.clanChatId && config.ticketSystem.clanChatMessage) {
@@ -99,7 +99,7 @@ async function handleButton(interaction) {
                         kickStatus = 'Rolle entfernt (User nicht kickbar)';
                     }
                 }
-                await interaction.editReply(`${kickStatus} und Ticket wird geschlossen.`);
+                await interaction.editReply(`${kickStatus}. Dieser Kanal wird in 24 Stunden automatisch gelöscht.`);
             }
 
             // --- PAUSE TRACKING ---
@@ -122,10 +122,13 @@ async function handleButton(interaction) {
                 return;
             }
 
-            // Remove from DB and delete the ticket channel after a short delay
+            // Remove from DB and schedule channel deletion for 24 hours later
             if (channel.isTextBased()) {
                 db.removeTicket(channel.id);
-                setTimeout(() => channel.delete('Ticket abgeschlossen').catch(() => null), 5000);
+                const deleteAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+                db.addScheduledAction('delete_channel', channel.id, guild.id, deleteAt);
+                
+                await channel.send(`⚠️ **Ticket abgeschlossen.** Dieser Kanal wird am <t:${Math.floor(deleteAt / 1000)}:f> gelöscht.`);
             }
         } catch (error) {
             console.error('Error in support action:', error);

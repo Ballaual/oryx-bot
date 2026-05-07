@@ -63,7 +63,32 @@ db.exec(`
     )
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS scheduled_actions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        action_type TEXT NOT NULL,
+        target_id TEXT NOT NULL,
+        guild_id TEXT NOT NULL,
+        execute_at INTEGER NOT NULL,
+        data TEXT
+    )
+`);
+
 module.exports = {
+    addScheduledAction: (actionType, targetId, guildId, executeAt, data = null) => {
+        const stmt = db.prepare('INSERT INTO scheduled_actions (action_type, target_id, guild_id, execute_at, data) VALUES (?, ?, ?, ?, ?)');
+        stmt.run(actionType, targetId, guildId, executeAt, data ? JSON.stringify(data) : null);
+    },
+
+    getPendingScheduledActions: () => {
+        const stmt = db.prepare('SELECT * FROM scheduled_actions WHERE execute_at <= ?');
+        return stmt.all(Date.now());
+    },
+
+    removeScheduledAction: (id) => {
+        const stmt = db.prepare('DELETE FROM scheduled_actions WHERE id = ?');
+        stmt.run(id);
+    },
     addTicket: (ticketChannelId, userId, guildId) => {
         const stmt = db.prepare('INSERT OR IGNORE INTO tracked_tickets (ticket_channel_id, user_id, guild_id, last_activity, created_at) VALUES (?, ?, ?, ?, ?)');
         stmt.run(ticketChannelId, userId, guildId, Date.now(), Date.now());

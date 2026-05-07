@@ -98,13 +98,42 @@ async function checkInactivity(client) {
     }
 }
 
+async function processScheduledActions(client) {
+    console.log(`[${ts()}] Checking for scheduled actions...`);
+    const actions = db.getPendingScheduledActions();
+
+    for (const action of actions) {
+        try {
+            if (action.action_type === 'delete_channel') {
+                const channel = await client.channels.fetch(action.target_id).catch(() => null);
+                if (channel) {
+                    await channel.delete('Scheduled deletion after ticket close').catch(err => 
+                        console.error(`[${ts()}] Failed to delete scheduled channel ${action.target_id}:`, err)
+                    );
+                    console.log(`[${ts()}] Scheduled deletion executed for channel ${action.target_id}`);
+                } else {
+                    console.log(`[${ts()}] Scheduled channel ${action.target_id} already gone.`);
+                }
+            }
+            db.removeScheduledAction(action.id);
+        } catch (error) {
+            console.error(`[${ts()}] Error processing scheduled action ${action.id}:`, error);
+        }
+    }
+}
+
 function startScheduler(client) {
-    // Global interval check runs every 30 minutes
-    const interval = 30 * 60 * 1000;
-    setInterval(() => checkInactivity(client), interval);
+    // Global interval check runs every 30 minutes for inactivity
+    setInterval(() => checkInactivity(client), 30 * 60 * 1000);
+
+    // Check for scheduled actions more frequently (every 5 minutes)
+    setInterval(() => processScheduledActions(client), 5 * 60 * 1000);
 
     // Initial check after startup
-    setTimeout(() => checkInactivity(client), 5000);
+    setTimeout(() => {
+        checkInactivity(client);
+        processScheduledActions(client);
+    }, 5000);
 }
 
 module.exports = { startScheduler };
