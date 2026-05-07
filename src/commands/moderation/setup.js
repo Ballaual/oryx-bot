@@ -54,6 +54,14 @@ module.exports = {
                 .addIntegerOption(opt => opt.setName('check_interval').setDescription('Check-Intervall in Minuten').setRequired(false))
                 .addIntegerOption(opt => opt.setName('ping_threshold').setDescription('Ping-Schwelle in Stunden').setRequired(false))
                 .addIntegerOption(opt => opt.setName('kick_threshold').setDescription('Kick-Schwelle in Stunden').setRequired(false))
+        )
+        .addSubcommand(sub =>
+            sub.setName('welcomer')
+                .setDescription('Konfiguriere den Welcomer (Join/Leave Nachrichten)')
+                .addBooleanOption(opt => opt.setName('enabled').setDescription('Welcomer aktivieren?').setRequired(false))
+                .addChannelOption(opt => opt.setName('channel').setDescription('Kanal für Join/Leave Nachrichten').setRequired(false))
+                .addStringOption(opt => opt.setName('welcome_msg').setDescription('Nachricht bei Join (Platzhalter: {user})').setRequired(false))
+                .addStringOption(opt => opt.setName('leave_msg').setDescription('Nachricht bei Leave (Platzhalter: {user})').setRequired(false))
         ),
 
     async execute(interaction) {
@@ -151,6 +159,19 @@ module.exports = {
                 if (checkInterval !== null) updates.ticketSystem.checkIntervalMinutes = checkInterval;
                 if (pingThreshold !== null) updates.ticketSystem.pingThresholdHours = pingThreshold;
                 if (kickThreshold !== null) updates.ticketSystem.kickThresholdHours = kickThreshold;
+            }
+        } else if (subcommand === 'welcomer') {
+            const enabled = interaction.options.getBoolean('enabled');
+            const channel = interaction.options.getChannel('channel');
+            const welcomeMsg = interaction.options.getString('welcome_msg');
+            const leaveMsg = interaction.options.getString('leave_msg');
+
+            if (enabled !== null || channel || welcomeMsg || leaveMsg) {
+                updates.welcomer = {};
+                if (enabled !== null) updates.welcomer.enabled = enabled;
+                if (channel) updates.welcomer.channelId = channel.id;
+                if (welcomeMsg !== null) updates.welcomer.welcomeMessage = welcomeMsg;
+                if (leaveMsg !== null) updates.welcomer.leaveMessage = leaveMsg;
             }
         }
 

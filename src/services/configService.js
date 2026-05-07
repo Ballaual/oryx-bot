@@ -31,6 +31,12 @@ const DEFAULT_CONFIG = {
         mode: "",
         allowCheckpointClears: true
     },
+    welcomer: {
+        enabled: false,
+        channelId: "",
+        welcomeMessage: "Herzlich willkommen auf dem Server, {user}! 🎉",
+        leaveMessage: "{user} hat den Server verlassen. 👋",
+    },
     musicChannelId: "",
 };
 
@@ -122,6 +128,13 @@ function set(guildId, updates) {
         newConfig.destinyActivityTracking = {
             ...current.destinyActivityTracking,
             ...updates.destinyActivityTracking
+        };
+    }
+
+    if (updates.welcomer) {
+        newConfig.welcomer = {
+            ...current.welcomer,
+            ...updates.welcomer
         };
     }
 

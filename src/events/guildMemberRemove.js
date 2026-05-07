@@ -1,9 +1,9 @@
 const { Events } = require('discord.js');
 const configService = require('../services/configService');
-const { createWelcomeEmbed } = require('../utils/embeds');
+const { createLeaveEmbed } = require('../utils/embeds');
 
 module.exports = {
-    name: Events.GuildMemberAdd,
+    name: Events.GuildMemberRemove,
     async execute(member) {
         const config = configService.get(member.guild.id);
         
@@ -13,10 +13,10 @@ module.exports = {
             const channel = await member.guild.channels.fetch(config.welcomer.channelId).catch(() => null);
             if (!channel || !channel.isTextBased()) return;
 
-            const welcomeEmbed = createWelcomeEmbed(member, config.welcomer.welcomeMessage);
-            await channel.send({ embeds: [welcomeEmbed] });
+            const leaveEmbed = createLeaveEmbed(member, config.welcomer.leaveMessage);
+            await channel.send({ embeds: [leaveEmbed] });
         } catch (error) {
-            console.error(`[Event: GuildMemberAdd] Fehler beim Senden der Willkommensnachricht für ${member.user.tag}:`, error);
+            console.error(`[Event: GuildMemberRemove] Fehler beim Senden der Leave-Nachricht für ${member.user.tag}:`, error);
         }
     },
 };

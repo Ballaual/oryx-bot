@@ -37,4 +37,38 @@ function createOnboardingMessage(member, isPaused = false) {
     return { embeds: [embed], components: [row] };
 }
 
-module.exports = { createOnboardingMessage };
+function createWelcomeEmbed(member, messageTemplate) {
+    const description = messageTemplate.replace('{user}', `<@${member.id}>`);
+    return new EmbedBuilder()
+        .setTitle('Willkommen!')
+        .setDescription(description)
+        .setColor(0x00FF00)
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+        .addFields(
+            { name: 'User', value: `${member.user.tag}`, inline: true },
+            { name: 'ID', value: `${member.id}`, inline: true },
+            { name: 'Server Mitglieder', value: `${member.guild.memberCount}`, inline: true }
+        )
+        .setFooter({ text: member.guild.name, iconURL: member.guild.iconURL() })
+        .setTimestamp();
+}
+
+function createLeaveEmbed(member, messageTemplate) {
+    const description = messageTemplate.replace('{user}', `**${member.user.tag}**`);
+    return new EmbedBuilder()
+        .setTitle('Auf Wiedersehen!')
+        .setDescription(description)
+        .setColor(0xFF0000)
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true, size: 256 }))
+        .addFields(
+            { name: 'Server Mitglieder', value: `${member.guild.memberCount}`, inline: true }
+        )
+        .setFooter({ text: member.guild.name, iconURL: member.guild.iconURL() })
+        .setTimestamp();
+}
+
+module.exports = { 
+    createOnboardingMessage,
+    createWelcomeEmbed,
+    createLeaveEmbed
+};
