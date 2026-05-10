@@ -16,7 +16,9 @@ module.exports = {
                 .addChannelOption(opt => opt.setName('clan_chat').setDescription('Clan-Chat Kanal (für Begrüßungen)'))
                 .addRoleOption(opt => opt.setName('bewerber_role').setDescription('Bewerber-Rolle (triggert Ticketerstellung)'))
                 .addRoleOption(opt => opt.setName('clan_role').setDescription('Clan-Mitglied Rolle'))
-                .addStringOption(opt => opt.setName('support_pings').setDescription('Rollen-IDs für Ticket-Pings (kommagetrennt)'))
+                .addRoleOption(opt => opt.setName('support_role_1').setDescription('Support-Rolle 1 (für Ticket-Pings)'))
+                .addRoleOption(opt => opt.setName('support_role_2').setDescription('Support-Rolle 2 (optional)'))
+                .addRoleOption(opt => opt.setName('support_role_3').setDescription('Support-Rolle 3 (optional)'))
                 .addStringOption(opt => opt.setName('welcome_msg').setDescription('Willkommensnachricht im Ticket'))
                 .addStringOption(opt => opt.setName('clan_msg').setDescription('Nachricht bei Clan-Aufnahme'))
                 .addStringOption(opt => opt.setName('inactivity_msg').setDescription('Ping-Nachricht bei Inaktivität'))
@@ -76,7 +78,9 @@ module.exports = {
             const clanChat = interaction.options.getChannel('clan_chat');
             const bewerberRole = interaction.options.getRole('bewerber_role');
             const clanRole = interaction.options.getRole('clan_role');
-            const supportPings = interaction.options.getString('support_pings');
+            const supportRoles = [1, 2, 3]
+                .map(i => interaction.options.getRole(`support_role_${i}`))
+                .filter(Boolean);
             const welcomeMsg = interaction.options.getString('welcome_msg');
             const clanMsg = interaction.options.getString('clan_msg');
             const inactivityMsg = interaction.options.getString('inactivity_msg');
@@ -91,11 +95,8 @@ module.exports = {
             if (clanChat) updates.ticketSystem.clanChatId = clanChat.id;
             if (bewerberRole) updates.ticketSystem.bewerberRoleId = bewerberRole.id;
             if (clanRole) updates.ticketSystem.clanMemberRoleId = clanRole.id;
-            if (supportPings !== null) {
-                updates.ticketSystem.supportPingIds = supportPings
-                    .split(',')
-                    .map(s => s.trim().replace(/^<@[&!]?(\d+)>$/, '$1'))
-                    .filter(s => s.length > 0);
+            if (supportRoles.length > 0) {
+                updates.ticketSystem.supportPingIds = supportRoles.map(r => r.id);
             }
             if (welcomeMsg !== null) updates.ticketSystem.welcomeMessage = welcomeMsg;
             if (clanMsg !== null) updates.ticketSystem.clanChatMessage = clanMsg;
