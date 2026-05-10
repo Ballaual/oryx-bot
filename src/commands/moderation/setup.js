@@ -92,7 +92,10 @@ module.exports = {
             if (bewerberRole) updates.ticketSystem.bewerberRoleId = bewerberRole.id;
             if (clanRole) updates.ticketSystem.clanMemberRoleId = clanRole.id;
             if (supportPings !== null) {
-                updates.ticketSystem.supportPingIds = supportPings.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                updates.ticketSystem.supportPingIds = supportPings
+                    .split(',')
+                    .map(s => s.trim().replace(/^<@[&!]?(\d+)>$/, '$1'))
+                    .filter(s => s.length > 0);
             }
             if (welcomeMsg !== null) updates.ticketSystem.welcomeMessage = welcomeMsg;
             if (clanMsg !== null) updates.ticketSystem.clanChatMessage = clanMsg;
