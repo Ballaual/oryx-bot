@@ -1,7 +1,7 @@
 const { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags } = require('discord.js');
 const db = require('../services/database');
 const configService = require('../services/configService');
-const { isSupportUser } = require('../utils/permissions');
+const { isSupportUser, isAdminOrSupport } = require('../utils/permissions');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -58,8 +58,8 @@ async function handleButton(interaction) {
 
     // --- SUPPORT ACTIONS (CLOSE/ADD/PAUSE) ---
     if (action === 'close' || action === 'add' || action === 'pause') {
-        if (!isSupportUser(member, guild.id)) {
-            return interaction.reply({ content: 'Nur Moderatoren können diese Aktion ausführen.', flags: [MessageFlags.Ephemeral] });
+        if (!isAdminOrSupport(member, guild.id)) {
+            return interaction.reply({ content: 'Nur Ticket-Supporter oder Administratoren können diese Aktion ausführen.', flags: [MessageFlags.Ephemeral] });
         }
 
         await interaction.deferReply();
@@ -127,7 +127,7 @@ async function handleButton(interaction) {
                 db.removeTicket(channel.id);
                 const deleteAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
                 db.addScheduledAction('delete_channel', channel.id, guild.id, deleteAt);
-                
+
                 await channel.send(`⚠️ **Ticket abgeschlossen.** Dieser Kanal wird am <t:${Math.floor(deleteAt / 1000)}:f> gelöscht.`);
             }
         } catch (error) {
