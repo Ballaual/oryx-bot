@@ -7,7 +7,8 @@ const { buildSupportMentions, buildSupportOverwrites } = require('../utils/menti
 module.exports = {
     name: Events.GuildMemberUpdate,
     async execute(oldMember, newMember) {
-        // Ensure we have the current member object
+        // Ensure we have the full member objects
+        const oldM = oldMember.partial ? await oldMember.fetch().catch(() => null) : oldMember;
         const newM = newMember.partial ? await newMember.fetch().catch(() => null) : newMember;
         if (!newM) return;
 
@@ -15,9 +16,13 @@ module.exports = {
         if (!config.ticketSystem.enabled) return;
 
         const roleId = config.ticketSystem.bewerberRoleId;
+        if (!roleId) return;
+
+        const hadRoleBefore = oldM ? oldM.roles.cache.has(roleId) : false;
         const hasRoleNow = newM.roles.cache.has(roleId);
 
-        if (hasRoleNow) {
+        // Only trigger when the role was just ADDED (not already present)
+        if (hasRoleNow && !hadRoleBefore) {
             // Check if user already has an active onboarding channel
             const existingTicket = db.getTicketByUserId(newM.id);
             if (!existingTicket) {

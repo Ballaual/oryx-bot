@@ -1,6 +1,7 @@
 const db = require('./database');
 const configService = require('./configService');
 const { buildSupportMentions } = require('../utils/mentions');
+const { syncMissingTickets } = require('./ticketSync');
 
 function ts() {
     return new Date().toISOString();
@@ -126,14 +127,26 @@ function startScheduler(client) {
     // Global interval check runs every 30 minutes for inactivity
     setInterval(() => checkInactivity(client), 30 * 60 * 1000);
 
-    // Check for scheduled actions more frequently (every 5 minutes)
-    setInterval(() => processScheduledActions(client), 5 * 60 * 1000);
+    // Check for scheduled actions + ticket sync every 5 minutes
+    setInterval(() => {
+        processScheduledActions(client);
+        runTicketSync(client);
+    }, 5 * 60 * 1000);
 
     // Initial check after startup
     setTimeout(() => {
         checkInactivity(client);
         processScheduledActions(client);
+        runTicketSync(client);
     }, 5000);
+}
+
+async function runTicketSync(client) {
+    for (const guild of client.guilds.cache.values()) {
+        await syncMissingTickets(client, guild).catch(err => {
+            console.error(`[${ts()}] Error syncing tickets for guild ${guild.id}:`, err);
+        });
+    }
 }
 
 module.exports = { startScheduler };
