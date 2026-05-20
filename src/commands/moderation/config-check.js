@@ -127,6 +127,13 @@ module.exports = {
         }
 
         // ═══════════════════════════════════════
+        // 📊  ACTIVITY TRACKING
+        // ═══════════════════════════════════════
+        const activityLines = [];
+        const at = config.activityTracking;
+        activityLines.push(at?.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+
+        // ═══════════════════════════════════════
         // 🔮  DESTINY 2
         // ═══════════════════════════════════════
         const destinyLines = [];
@@ -201,6 +208,7 @@ module.exports = {
                 { name: '🎫  Ticket-System', value: ticketLines.join('\n') || '*Nicht konfiguriert*' },
                 { name: '👋  Welcomer', value: welcomerLines.join('\n') || '*Nicht konfiguriert*' },
                 { name: '🎵  Musik', value: musicLines.join('\n') || '*Nicht konfiguriert*' },
+                { name: '📊  Activity-Tracking', value: activityLines.join('\n') || '*Nicht konfiguriert*' },
                 { name: '🔮  Destiny 2 Tracker', value: destinyLines.join('\n') || '*Nicht konfiguriert*' },
             )
             .setFooter({ text: `Guild-ID: ${guild.id}`, iconURL: guild.iconURL() })

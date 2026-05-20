@@ -2,6 +2,7 @@ const { Events } = require('discord.js');
 const { startScheduler } = require('../services/scheduler');
 const { startDestinyActivityTracker } = require('../services/destinyActivityTracker');
 const { syncMissingTickets } = require('../services/ticketSync');
+const activityTracker = require('../services/activityTracker');
 
 module.exports = {
     name: Events.ClientReady,
@@ -18,6 +19,9 @@ module.exports = {
         startScheduler(client);
         // Start Destiny raid/dungeon summary tracker (optional via config + env BUNGIE_API_KEY)
         startDestinyActivityTracker(client);
+
+        // Beim Start: laufende Voice-Sessions für bereits verbundene User initialisieren
+        activityTracker.initializeFromClient(client);
 
         // Ensure every bewerber member has an onboarding ticket
         for (const guild of client.guilds.cache.values()) {

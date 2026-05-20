@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
@@ -22,6 +22,7 @@ fs.rmdirSync = function(dir, options) {
 };
 const { initMusicService } = require('./services/music');
 const configService = require('./services/configService');
+const activityTracker = require('./services/activityTracker');
 
 // Migrate old config before doing anything else
 configService.migrate();
@@ -33,8 +34,10 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildVoiceStates // Benötigt für den Musikbot
-    ]
+        GatewayIntentBits.GuildVoiceStates, // Benötigt für den Musikbot
+        GatewayIntentBits.GuildMessageReactions // Reaktions-Tracking
+    ],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
 // Commands Collection
@@ -82,6 +85,9 @@ if (fs.existsSync(eventsPath)) {
 
 // 3. Musik-Service initialisieren
 initMusicService(client);
+
+// 4. Activity Tracker: Shutdown-Handler für laufende Voice-Sessions
+activityTracker.registerShutdownHandlers();
 
 // Login
 client.login(process.env.DISCORD_TOKEN);

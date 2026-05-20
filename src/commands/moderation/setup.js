@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } = require('discord.js');
 const configService = require('../../services/configService');
+const activityTracker = require('../../services/activityTracker');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -59,6 +60,12 @@ module.exports = {
                 .setDescription('Konfiguriere das Musik-System')
                 .addBooleanOption(opt => opt.setName('enabled').setDescription('Musik-System aktivieren?'))
                 .addChannelOption(opt => opt.setName('channel').setDescription('Erzwinge Musik-Bot in diesem Voice-Kanal'))
+        )
+        // --- ACTIVITY TRACKING ---
+        .addSubcommand(sub =>
+            sub.setName('activity')
+                .setDescription('Konfiguriere das Discord-Aktivitäts-Tracking (Voice/Messages/Reaktionen)')
+                .addBooleanOption(opt => opt.setName('enabled').setDescription('Activity-Tracking aktivieren?').setRequired(true))
         ),
 
     async execute(interaction) {
@@ -152,10 +159,27 @@ module.exports = {
             updates.music = {};
             if (enabled !== null) updates.music.enabled = enabled;
             if (channel) updates.music.channelId = channel.id;
+
+        } else if (subcommand === 'activity') {
+            const enabled = interaction.options.getBoolean('enabled');
+
+            updates.activityTracking = {};
+            if (enabled !== null) updates.activityTracking.enabled = enabled;
         }
 
         if (Object.keys(updates).length > 0) {
             configService.set(guildId, updates);
+
+            // Activity-Tracker bei Aktivierungs-Toggle direkt synchronisieren,
+            // damit nicht erst beim nächsten Voice-State-Wechsel umgeschaltet wird.
+            if (subcommand === 'activity' && updates.activityTracking && typeof updates.activityTracking.enabled === 'boolean') {
+                try {
+                    activityTracker.setEnabledForGuild(interaction.guild, updates.activityTracking.enabled);
+                } catch (err) {
+                    console.error('[setup activity] setEnabledForGuild failed:', err);
+                }
+            }
+
             await interaction.reply({ content: `✅ Konfiguration für **${subcommand}** erfolgreich aktualisiert!`, flags: [MessageFlags.Ephemeral] });
         } else {
             await interaction.reply({ content: `ℹ️ Keine neuen Werte übergeben, die Konfiguration bleibt unverändert.`, flags: [MessageFlags.Ephemeral] });

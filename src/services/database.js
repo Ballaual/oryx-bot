@@ -74,6 +74,18 @@ db.exec(`
     )
 `);
 
+db.exec(`
+    CREATE TABLE IF NOT EXISTS activity_stats (
+        user_id TEXT NOT NULL,
+        guild_id TEXT NOT NULL,
+        messages_sent INTEGER NOT NULL DEFAULT 0,
+        reactions_added INTEGER NOT NULL DEFAULT 0,
+        voice_seconds INTEGER NOT NULL DEFAULT 0,
+        last_updated INTEGER NOT NULL,
+        PRIMARY KEY (user_id, guild_id)
+    )
+`);
+
 module.exports = {
     addScheduledAction: (actionType, targetId, guildId, executeAt, data = null) => {
         const stmt = db.prepare('INSERT INTO scheduled_actions (action_type, target_id, guild_id, execute_at, data) VALUES (?, ?, ?, ?, ?)');
@@ -188,5 +200,50 @@ module.exports = {
         db.prepare(
             'INSERT OR IGNORE INTO clan_member_tracking (membership_id, guild_id, first_seen_at) VALUES (?, ?, ?)'
         ).run(String(membershipId), String(guildId), Date.now());
+    },
+
+    incrementActivityMessages: (userId, guildId, amount = 1) => {
+        db.prepare(`
+            INSERT INTO activity_stats (user_id, guild_id, messages_sent, last_updated)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id, guild_id) DO UPDATE SET
+                messages_sent = messages_sent + excluded.messages_sent,
+                last_updated = excluded.last_updated
+        `).run(String(userId), String(guildId), amount, Date.now());
+    },
+
+    incrementActivityReactions: (userId, guildId, amount = 1) => {
+        db.prepare(`
+            INSERT INTO activity_stats (user_id, guild_id, reactions_added, last_updated)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id, guild_id) DO UPDATE SET
+                reactions_added = reactions_added + excluded.reactions_added,
+                last_updated = excluded.last_updated
+        `).run(String(userId), String(guildId), amount, Date.now());
+    },
+
+    addActivityVoiceSeconds: (userId, guildId, seconds) => {
+        if (!seconds || seconds <= 0) return;
+        db.prepare(`
+            INSERT INTO activity_stats (user_id, guild_id, voice_seconds, last_updated)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id, guild_id) DO UPDATE SET
+                voice_seconds = voice_seconds + excluded.voice_seconds,
+                last_updated = excluded.last_updated
+        `).run(String(userId), String(guildId), Math.floor(seconds), Date.now());
+    },
+
+    getActivityStats: (userId, guildId) => {
+        return db.prepare(
+            'SELECT * FROM activity_stats WHERE user_id = ? AND guild_id = ?'
+        ).get(String(userId), String(guildId));
+    },
+
+    getActivityLeaderboard: (guildId, sortBy = 'voice_seconds', limit = 10) => {
+        const allowed = ['voice_seconds', 'messages_sent', 'reactions_added'];
+        const column = allowed.includes(sortBy) ? sortBy : 'voice_seconds';
+        return db.prepare(
+            `SELECT * FROM activity_stats WHERE guild_id = ? AND ${column} > 0 ORDER BY ${column} DESC LIMIT ?`
+        ).all(String(guildId), Math.max(1, Math.min(50, Number(limit) || 10)));
     },
 };

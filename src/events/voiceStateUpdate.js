@@ -1,4 +1,6 @@
 const { Events } = require('discord.js');
+const activityTracker = require('../services/activityTracker');
+const configService = require('../services/configService');
 
 // Per-guild state for "bot alone" handling
 const leaveTimeouts = new Map(); // guildId -> Timeout
@@ -14,6 +16,29 @@ module.exports = {
     async execute(oldState, newState, client) {
         const guild = newState.guild || oldState.guild;
         if (!guild) return;
+
+        // ---- Activity Tracking: Voice-Sessions ----
+        // Bots ignorieren. member kann auf einem der beiden States vorhanden sein.
+        const member = newState.member || oldState.member;
+        const activityEnabled = configService.get(guild.id).activityTracking?.enabled;
+        if (activityEnabled && member && !member.user.bot) {
+            const userId = member.id;
+            const wasInVoice = Boolean(oldState.channelId);
+            const isInVoice = Boolean(newState.channelId);
+
+            if (!wasInVoice && isInVoice) {
+                // Join
+                activityTracker.startSession(guild.id, userId);
+            } else if (wasInVoice && !isInVoice) {
+                // Leave
+                activityTracker.endSession(guild.id, userId);
+            } else if (wasInVoice && isInVoice && oldState.channelId !== newState.channelId) {
+                // Channel-Wechsel: persistieren + neue Session beginnen
+                activityTracker.endSession(guild.id, userId);
+                activityTracker.startSession(guild.id, userId);
+            }
+        }
+        // ---- /Activity Tracking ----
 
         const botMember = guild.members.me;
         const botChannel = botMember?.voice?.channel;

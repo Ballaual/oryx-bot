@@ -41,6 +41,9 @@ const DEFAULT_CONFIG = {
         enabled: false,
         channelId: "",
     },
+    activityTracking: {
+        enabled: false,
+    },
 };
 
 function getGuildConfigPath(guildId) {
@@ -98,7 +101,8 @@ function loadConfig(guildId) {
                 ticketSystem: { ...DEFAULT_CONFIG.ticketSystem, ...data.ticketSystem },
                 destinyActivityTracking: { ...DEFAULT_CONFIG.destinyActivityTracking, ...data.destinyActivityTracking },
                 welcomer: { ...DEFAULT_CONFIG.welcomer, ...data.welcomer },
-                music: { ...DEFAULT_CONFIG.music, ...data.music }
+                music: { ...DEFAULT_CONFIG.music, ...data.music },
+                activityTracking: { ...DEFAULT_CONFIG.activityTracking, ...data.activityTracking }
             };
         } catch (error) {
             console.error(`[ConfigService] Error reading config for guild ${guildId}:`, error);
@@ -157,6 +161,13 @@ function set(guildId, updates) {
         newConfig.music = {
             ...current.music,
             ...updates.music
+        };
+    }
+
+    if (updates.activityTracking) {
+        newConfig.activityTracking = {
+            ...current.activityTracking,
+            ...updates.activityTracking
         };
     }
 
