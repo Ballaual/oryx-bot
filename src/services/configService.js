@@ -34,8 +34,8 @@ const DEFAULT_CONFIG = {
     welcomer: {
         enabled: false,
         channelId: "",
-        welcomeMessage: "Herzlich willkommen auf dem Server, {user}! 🎉",
-        leaveMessage: "{user} hat den Server verlassen. 👋",
+        welcomeMessage: "{user} ist dem Server beigetreten. 🟢",
+        leaveMessage: "{user} hat den Server verlassen. 🔴",
     },
     music: {
         enabled: false,
@@ -43,6 +43,7 @@ const DEFAULT_CONFIG = {
     },
     activityTracking: {
         enabled: false,
+        enabledAt: null, // Unix-ms Zeitstempel des letzten Aktivierens
     },
 };
 
