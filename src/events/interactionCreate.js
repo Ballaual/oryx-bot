@@ -67,6 +67,24 @@ async function handleButton(interaction) {
         const config = configService.get(guild.id);
 
         try {
+            // --- PAUSE TRACKING (must run before any role/ticket mutations) ---
+            if (action === 'pause') {
+                const newState = db.toggleTicketPause(channel.id);
+                const isPaused = newState === 1;
+
+                const { createOnboardingMessage } = require('../utils/embeds');
+                const onboardingData = createOnboardingMessage(targetMember || { id: targetUserId, guild }, isPaused);
+
+                await interaction.editReply({
+                    content: isPaused
+                        ? `⏸️ Die Nachverfolgung für Ticket <#${channel.id}> wurde **pausiert**.`
+                        : `▶️ Die Nachverfolgung für Ticket <#${channel.id}> wurde **fortgesetzt**.`
+                });
+
+                await interaction.message.edit({ components: onboardingData.components }).catch(() => null);
+                return;
+            }
+
             if (targetMember?.roles.cache.has(config.ticketSystem.bewerberRoleId)) {
                 await targetMember.roles.remove(config.ticketSystem.bewerberRoleId, 'Ticket bearbeitet');
             }
@@ -100,26 +118,6 @@ async function handleButton(interaction) {
                     }
                 }
                 await interaction.editReply(`${kickStatus}. Dieser Kanal wird in 24 Stunden automatisch gelöscht.`);
-            }
-
-            // --- PAUSE TRACKING ---
-            if (action === 'pause') {
-                const newState = db.toggleTicketPause(channel.id);
-                const isPaused = newState === 1;
-
-                // Update the message components
-                const { createOnboardingMessage } = require('../utils/embeds');
-                const onboardingData = createOnboardingMessage(targetMember || { id: targetUserId }, isPaused);
-
-                await interaction.editReply({
-                    content: isPaused
-                        ? `⏸️ Die Nachverfolgung für Ticket <#${channel.id}> wurde **pausiert**.`
-                        : `▶️ Die Nachverfolgung für Ticket <#${channel.id}> wurde **fortgesetzt**.`
-                });
-
-                // Update original panel message if possible
-                await interaction.message.edit({ components: onboardingData.components }).catch(() => null);
-                return;
             }
 
             // Remove from DB and schedule channel deletion for 24 hours later

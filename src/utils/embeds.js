@@ -30,7 +30,8 @@ function createOnboardingMessage(member, isPaused = false) {
                 .setStyle(ButtonStyle.Success),
             new ButtonBuilder()
                 .setCustomId(`pause_ticket_${member.id}`)
-                .setEmoji('🕒')
+                .setEmoji(isPaused ? '▶️' : '⏸️')
+                .setLabel(isPaused ? 'Fortsetzen' : 'Pausieren')
                 .setStyle(ButtonStyle.Secondary)
         );
 
