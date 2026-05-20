@@ -21,6 +21,7 @@ module.exports = {
         // ── Helper ──
         const ok = (label, detail) => `✅  \`${label}\` — ${detail}`;
         const err = (label, detail) => { totalErrors++; return `❌  \`${label}\` — ${detail}`; };
+        const off = (label, detail) => `❌  \`${label}\` — ${detail}`;
         const info = (label, detail) => `ℹ️  \`${label}\` — ${detail}`;
         const skip = (label, detail) => `⏭️  \`${label}\` — ${detail}`;
 
@@ -37,7 +38,7 @@ module.exports = {
         const ticketLines = [];
         const ts = config.ticketSystem;
 
-        ticketLines.push(ts.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+        ticketLines.push(ts.enabled ? ok('Aktiviert', 'Ja') : off('Aktiviert', 'Nein'));
 
         if (ts.enabled) {
             // Bewerber-Rolle
@@ -78,15 +79,25 @@ module.exports = {
             if (!Array.isArray(ts.supportPingIds) || ts.supportPingIds.length === 0) {
                 ticketLines.push(err('Support-Pings', 'keine konfiguriert'));
             } else {
+                const entries = [];
                 let resolved = 0;
                 for (const id of ts.supportPingIds) {
                     const role = await guild.roles.fetch(id).catch(() => null);
                     const member = role ? null : await guild.members.fetch(id).catch(() => null);
-                    if (role || member) resolved++;
+                    if (role) {
+                        resolved++;
+                        entries.push(`<@&${role.id}>`);
+                    } else if (member) {
+                        resolved++;
+                        entries.push(`<@${member.id}>`);
+                    } else {
+                        entries.push(`⚠️ \`${id}\``);
+                    }
                 }
+                const list = entries.join(', ');
                 ticketLines.push(resolved === ts.supportPingIds.length
-                    ? ok('Support-Pings', `${resolved}/${ts.supportPingIds.length} auflösbar`)
-                    : err('Support-Pings', `${resolved}/${ts.supportPingIds.length} auflösbar`));
+                    ? ok('Support-Pings', `${resolved}/${ts.supportPingIds.length} — ${list}`)
+                    : err('Support-Pings', `${resolved}/${ts.supportPingIds.length} — ${list}`));
             }
 
             // Timing
@@ -100,7 +111,7 @@ module.exports = {
         const welcomerLines = [];
         const wc = config.welcomer;
 
-        welcomerLines.push(wc?.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+        welcomerLines.push(wc?.enabled ? ok('Aktiviert', 'Ja') : off('Aktiviert', 'Nein'));
 
         if (wc?.enabled) {
             const wcChannel = await resolveChannel(wc.channelId);
@@ -115,7 +126,7 @@ module.exports = {
         const musicLines = [];
         const mc = config.music;
 
-        musicLines.push(mc?.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+        musicLines.push(mc?.enabled ? ok('Aktiviert', 'Ja') : off('Aktiviert', 'Nein'));
 
         if (mc?.enabled && mc.channelId) {
             const musicChannel = await resolveChannel(mc.channelId);
@@ -131,7 +142,7 @@ module.exports = {
         // ═══════════════════════════════════════
         const activityLines = [];
         const at = config.activityTracking;
-        activityLines.push(at?.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+        activityLines.push(at?.enabled ? ok('Aktiviert', 'Ja') : off('Aktiviert', 'Nein'));
         if (at?.enabled) {
             const sinceSec = at.enabledAt ? Math.floor(at.enabledAt / 1000) : null;
             activityLines.push(sinceSec
@@ -148,7 +159,7 @@ module.exports = {
         if (!dt || typeof dt !== 'object') {
             destinyLines.push(err('Konfiguration', 'fehlt oder ungültig'));
         } else {
-            destinyLines.push(dt.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+            destinyLines.push(dt.enabled ? ok('Aktiviert', 'Ja') : off('Aktiviert', 'Nein'));
 
             if (dt.enabled) {
                 // API Key
