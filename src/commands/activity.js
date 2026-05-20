@@ -34,24 +34,7 @@ module.exports = {
         )
         .addSubcommand(sub =>
             sub.setName('leaderboard')
-                .setDescription('Top-Liste der aktivsten Member')
-                .addStringOption(opt =>
-                    opt.setName('typ')
-                        .setDescription('Wonach sortiert werden soll')
-                        .addChoices(
-                            { name: 'Voice-Zeit', value: 'voice_seconds' },
-                            { name: 'Nachrichten', value: 'messages_sent' },
-                            { name: 'Reaktionen', value: 'reactions_added' },
-                        )
-                        .setRequired(false)
-                )
-                .addIntegerOption(opt =>
-                    opt.setName('limit')
-                        .setDescription('Wie viele Einträge (1–25, Default 10)')
-                        .setMinValue(1)
-                        .setMaxValue(25)
-                        .setRequired(false)
-                )
+                .setDescription('Top 10 der aktivsten Member (Voice-Zeit, Nachrichten, Reaktionen)')
         ),
 
     async execute(interaction) {
@@ -106,32 +89,27 @@ module.exports = {
         }
 
         if (sub === 'leaderboard') {
-            const sortBy = interaction.options.getString('typ') || 'voice_seconds';
-            const limit = interaction.options.getInteger('limit') || 10;
-            const rows = db.getActivityLeaderboard(interaction.guildId, sortBy, limit);
+            const LIMIT = 10;
 
-            const labels = {
-                voice_seconds: '🎙️ Voice-Zeit',
-                messages_sent: '💬 Nachrichten',
-                reactions_added: '😀 Reaktionen',
-            };
+            const metrics = [
+                { key: 'voice_seconds',  label: '🎙️ Voice-Zeit',  format: (row) => formatDuration(row.voice_seconds) },
+                { key: 'messages_sent',  label: '💬 Nachrichten',  format: (row) => String(row.messages_sent || 0) },
+                { key: 'reactions_added', label: '😀 Reaktionen',  format: (row) => String(row.reactions_added || 0) },
+            ];
 
-            if (!rows.length) {
-                return interaction.editReply({ content: `Noch keine Daten für **${labels[sortBy]}**.\n📡 Tracking aktiv seit: ${activeSinceText}` });
-            }
-
-            const lines = rows.map((row, i) => {
-                const rank = `${i + 1}.`.padEnd(3, ' ');
-                const value = sortBy === 'voice_seconds'
-                    ? formatDuration(row.voice_seconds)
-                    : String(row[sortBy] ?? 0);
-                return `${rank} <@${row.user_id}> — **${value}**`;
+            const fields = metrics.map(({ key, label, format }) => {
+                const rows = db.getActivityLeaderboard(interaction.guildId, key, LIMIT);
+                if (!rows.length) {
+                    return { name: label, value: '*Noch keine Daten*', inline: true };
+                }
+                const lines = rows.map((row, i) => `**${i + 1}.** <@${row.user_id}> — ${format(row)}`);
+                return { name: label, value: lines.join('\n'), inline: true };
             });
 
             const embed = new EmbedBuilder()
-                .setTitle(`Leaderboard · ${labels[sortBy]}`)
+                .setTitle('Leaderboard · Top 10')
                 .setColor(0x5865F2)
-                .setDescription(lines.join('\n'))
+                .addFields(...fields)
                 .addFields({ name: '📡 Tracking aktiv seit', value: activeSinceText, inline: false })
                 .setTimestamp();
 
