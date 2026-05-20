@@ -164,7 +164,15 @@ module.exports = {
             const enabled = interaction.options.getBoolean('enabled');
 
             updates.activityTracking = {};
-            if (enabled !== null) updates.activityTracking.enabled = enabled;
+            if (enabled !== null) {
+                updates.activityTracking.enabled = enabled;
+                // Beim erstmaligen / erneuten Aktivieren Zeitstempel setzen,
+                // damit /activity anzeigen kann, seit wann getrackt wird.
+                const wasEnabled = Boolean(currentConfig.activityTracking?.enabled);
+                if (enabled && !wasEnabled) {
+                    updates.activityTracking.enabledAt = Date.now();
+                }
+            }
         }
 
         if (Object.keys(updates).length > 0) {

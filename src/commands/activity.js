@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, PermissionFlagsBits } = require('discord.js');
 const db = require('../services/database');
 const activityTracker = require('../services/activityTracker');
 const configService = require('../services/configService');
@@ -21,6 +21,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('activity')
         .setDescription('Discord-Aktivitäts-Statistiken')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDMPermission(false)
         .addSubcommand(sub =>
             sub.setName('user')
                 .setDescription('Zeigt die Aktivitäts-Stats eines Users')
@@ -57,15 +59,25 @@ module.exports = {
             return interaction.reply({ content: 'Nur in einem Server nutzbar.', flags: [MessageFlags.Ephemeral] });
         }
 
-        if (!configService.get(interaction.guildId).activityTracking?.enabled) {
+        const cfg = configService.get(interaction.guildId).activityTracking || {};
+        if (!cfg.enabled) {
             return interaction.reply({
                 content: '⚠️ Activity-Tracking ist auf diesem Server nicht aktiviert. Ein Admin kann es per `/setup activity enabled:true` einschalten.',
                 flags: [MessageFlags.Ephemeral],
             });
         }
 
-        // Vor Anzeige: laufende Voice-Sessions persistieren, damit die Stats aktuell sind.
+        // Sofort ephemeral antworten, damit Folgeausgaben ebenfalls ephemeral sind.
+        await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+        // Laufende Voice-Sessions persistieren, damit die Stats aktuell sind.
         try { activityTracker.flushActiveSessions(); } catch { /* ignore */ }
+
+        // "Aktiv seit" als Discord-Timestamp formatieren (relativ + absolut)
+        const enabledAtSec = cfg.enabledAt ? Math.floor(cfg.enabledAt / 1000) : null;
+        const activeSinceText = enabledAtSec
+            ? `<t:${enabledAtSec}:f> (<t:${enabledAtSec}:R>)`
+            : 'unbekannt';
 
         const sub = interaction.options.getSubcommand();
 
@@ -85,11 +97,12 @@ module.exports = {
                     { name: '🎙️ Voice-Zeit', value: formatDuration(stats.voice_seconds), inline: true },
                     { name: '💬 Nachrichten', value: String(stats.messages_sent || 0), inline: true },
                     { name: '😀 Reaktionen', value: String(stats.reactions_added || 0), inline: true },
+                    { name: '📡 Tracking aktiv seit', value: activeSinceText, inline: false },
                 )
                 .setFooter({ text: `User-ID: ${target.id}` })
                 .setTimestamp();
 
-            return interaction.reply({ embeds: [embed] });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'leaderboard') {
@@ -104,7 +117,7 @@ module.exports = {
             };
 
             if (!rows.length) {
-                return interaction.reply({ content: `Noch keine Daten für **${labels[sortBy]}**.`, flags: [MessageFlags.Ephemeral] });
+                return interaction.editReply({ content: `Noch keine Daten für **${labels[sortBy]}**.\n📡 Tracking aktiv seit: ${activeSinceText}` });
             }
 
             const lines = rows.map((row, i) => {
@@ -119,9 +132,10 @@ module.exports = {
                 .setTitle(`Leaderboard · ${labels[sortBy]}`)
                 .setColor(0x5865F2)
                 .setDescription(lines.join('\n'))
+                .addFields({ name: '📡 Tracking aktiv seit', value: activeSinceText, inline: false })
                 .setTimestamp();
 
-            return interaction.reply({
+            return interaction.editReply({
                 embeds: [embed],
                 allowedMentions: { parse: [] }, // nicht pingen
             });

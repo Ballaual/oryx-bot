@@ -132,6 +132,12 @@ module.exports = {
         const activityLines = [];
         const at = config.activityTracking;
         activityLines.push(at?.enabled ? ok('Aktiviert', 'Ja') : info('Aktiviert', 'Nein'));
+        if (at?.enabled) {
+            const sinceSec = at.enabledAt ? Math.floor(at.enabledAt / 1000) : null;
+            activityLines.push(sinceSec
+                ? info('Aktiv seit', `<t:${sinceSec}:f> (<t:${sinceSec}:R>)`)
+                : info('Aktiv seit', 'unbekannt (vor diesem Update aktiviert)'));
+        }
 
         // ═══════════════════════════════════════
         // 🔮  DESTINY 2
